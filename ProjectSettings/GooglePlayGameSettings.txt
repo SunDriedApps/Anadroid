@@ -1,0 +1,9 @@
+lastUpgrade=00931
+proj.AppId=885320711031
+and.BundleId=ie.sundriedapps.anadroid
+proj.classDir=Assets
+proj.ConstantsClassName=AnadroidIds
+and.ResourceData=%3c%3fxml+version%3d%221.0%22+encoding%3d%22utf-8%22%3f%3e%0d%0a%3c%21--%0d%0aGoogle+Play+game+services+IDs.%0d%0aSave+this+file+as+res%2fvalues%2fgames-ids.xml+in+your+project.%0d%0a--%3e%0d%0a%3cresources%3e%0d%0a++%3cstring+name%3d%22app_id%22%3e885320711031%3c%2fstring%3e%0d%0a++%3cstring+name%3d%22package_name%22%3eie.sundriedapps.anadroid%3c%2fstring%3e%0d%0a++%3cstring+name%3d%22achievement_getting_started%22%3eCgkI9_bnieIZEAIQAA%3c%2fstring%3e%0d%0a%3c%2fresources%3e%0d%0a
+and.ClientId=885320711031-hhji9t5kbjuilo2u6njue3h0vvbraqea.apps.googleusercontent.com
+proj.requireGPlus=false
+android.SetupDone=true
