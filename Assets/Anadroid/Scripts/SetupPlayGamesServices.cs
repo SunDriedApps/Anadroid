@@ -4,7 +4,6 @@ using UnityEngine.SocialPlatforms;
 
 public class SetupPlayGamesServices : MonoBehaviour
 {
-    // Blah blah
     void Start()
     {
         // Select the Google Play Games platform as our social platform implementation
