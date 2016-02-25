@@ -23,21 +23,39 @@ public class GameManager : RealTimeMultiplayerListener
         Aborted
     }
 
-    ;
+    public enum MessageState
+    {
+        GenerateMessage,
+        MessageSent,
+        MessageRecieved
+    }
 
     private GameState mGameState = GameState.SettingUp;
 
-    // my participant ID
+    // participant ID's
     private string mMyParticipantId = "";
+    private string mOpponentId = "";
 
-    // room setup progress
-    private float mRoomSetupProgress = 0.0f;
+    // all participants
+    private List<Participant> mParticipants;
 
-    float mRoomSetupStartTime = 0.0f;
+    // messageStatus
+    private GameObject messageStatusPanel;
 
-    private GameManager()
+    public GameManager(){}
+
+    byte[] mMessage = new byte[1];
+    public void SendMessage(int message)
     {
-        mRoomSetupStartTime = Time.time;
+        mMessage[0] = (byte)message;
+
+        PlayGamesPlatform.Instance.RealTime.SendMessage(
+            true, mOpponentId, mMessage);
+    }
+
+    public void OnRealTimeMessageReceived(bool isReliable, string senderId, byte[] data)
+    {
+        MessageDisplayManager.SetMessageRecieved(data[0].ToString());
     }
 
     public static void CreateQuickGame()
@@ -87,15 +105,23 @@ public class GameManager : RealTimeMultiplayerListener
         if (success)
         {
             mGameState = GameState.Playing;
-            mMyParticipantId = GetSelf().ParticipantId;
 
+            // Store participants
+            mParticipants = PlayGamesPlatform.Instance.RealTime.GetConnectedParticipants();
+
+            // acquire participant ID's
+            mMyParticipantId = GetSelf().ParticipantId;
+            mOpponentId = GetOpponentId();
+
+            // load game scene
             NavigationUtils.ChangeScene(1);
 
-            Debug.Log("Room successfully connected");
+            Debug.Log("Room successfully connected. " + sInstance != null);
         }
         else
         {
             mGameState = GameState.SetupFailed;
+
             Debug.Log("Room failed to connect");
         }
     }
@@ -122,7 +148,6 @@ public class GameManager : RealTimeMultiplayerListener
     {
         Debug.Log("Peers disconnected");
 
-        // if, as a result, we are the only player in the race, it's over
         if (mGameState == GameState.Playing)
         {
             mGameState = GameState.Aborted;
@@ -131,12 +156,7 @@ public class GameManager : RealTimeMultiplayerListener
 
     public void OnRoomSetupProgress(float percent)
     {
-        mRoomSetupProgress = percent;
-    }
-
-    public void OnRealTimeMessageReceived(bool isReliable, string senderId, byte[] data)
-    {
-        int score = (int)data[1];
+        
     }
 
     public void CleanUp()
@@ -149,6 +169,19 @@ public class GameManager : RealTimeMultiplayerListener
     private Participant GetSelf()
     {
         return PlayGamesPlatform.Instance.RealTime.GetSelf();
+    }
+
+    private String GetOpponentId()
+    {
+        foreach(Participant p in mParticipants)
+        {
+            if(!p.ParticipantId.Equals(mMyParticipantId))
+            {
+                return p.ParticipantId;
+            }
+        }
+
+        return null;
     }
 
     private Participant GetParticipant(string participantId)
