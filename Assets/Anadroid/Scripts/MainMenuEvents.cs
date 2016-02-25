@@ -18,4 +18,28 @@ public class MainMenuEvents : MonoBehaviour {
 
         GameManager.CreateQuickGame();
     }
+
+    public void OnInvite()
+    {
+        Debug.Log("Invite Clicked");
+
+        if (mProcessed)
+        {
+            return;
+        }
+        mProcessed = true;
+
+        GameManager.CreateWithInvitationScreen();
+    }
+
+    public void OnInbox()
+    {
+        Debug.Log("Inbox Clicked");
+    }
+
+    public void OnSignOut()
+    {
+        Debug.Log("Sign out Clicked");
+    }
+
 }
