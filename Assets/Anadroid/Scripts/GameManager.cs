@@ -4,6 +4,7 @@ using GooglePlayGames;
 using GooglePlayGames.BasicApi.Multiplayer;
 using System;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class GameManager : RealTimeMultiplayerListener
 {
@@ -11,6 +12,7 @@ public class GameManager : RealTimeMultiplayerListener
     const int GAME_VARIENT_VS = 0;
     const int MIN_OPPONENTS = 1;
     const int MAX_OPPONENTS = 3;
+    const string MESSAGE_RECIEVED = "MessageRecieved";
 
     static GameManager sInstance = null;
 
@@ -55,7 +57,9 @@ public class GameManager : RealTimeMultiplayerListener
 
     public void OnRealTimeMessageReceived(bool isReliable, string senderId, byte[] data)
     {
-        MessageDisplayManager.SetMessageRecieved(data[0].ToString());
+        GameObject messageRecieved = GameObject.Find(MESSAGE_RECIEVED);
+        Text t = messageRecieved.GetComponent<Text>();
+        t.text = data[0].ToString();
     }
 
     public static void CreateQuickGame()

@@ -4,13 +4,17 @@ using UnityEngine.UI;
 
 public class GameScreenEvents : MonoBehaviour {
 
+    const string MESSAGE_SENT = "MessageSent";
+
     public void OnSendMessage()
     {
         int rnd = GetRandomNum();
 
         GameManager.Instance.SendMessage(rnd);
 
-        MessageDisplayManager.SetMessageSent(rnd.ToString());
+        GameObject messageSent = GameObject.Find(MESSAGE_SENT);
+        Text t = messageSent.GetComponent<Text>();
+        t.text = rnd.ToString();
     }
 
     private int GetRandomNum()
