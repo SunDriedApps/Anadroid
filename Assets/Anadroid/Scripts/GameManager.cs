@@ -11,8 +11,10 @@ public class GameManager : RealTimeMultiplayerListener
     const int QUICK_GAME_OPPONENTS = 1;
     const int GAME_VARIENT_VS = 0;
     const int MIN_OPPONENTS = 1;
-    const int MAX_OPPONENTS = 3;
-    const string MESSAGE_RECIEVED = "MessageRecieved";
+    const int MAX_OPPONENTS = 1;
+
+    // categories
+    const string FILE_CAPITAL_CITIES = "CapitalCities";
 
     static GameManager sInstance = null;
 
@@ -25,24 +27,25 @@ public class GameManager : RealTimeMultiplayerListener
         Aborted
     }
 
-    public enum MessageState
-    {
-        GenerateMessage,
-        MessageSent,
-        MessageRecieved
-    }
-
     private GameState mGameState = GameState.SettingUp;
 
     // participant ID's
     private string mMyParticipantId = "";
     private string mOpponentId = "";
 
-    // all participants
+    // player scores
+    private int mScore = 0;
+    private int mOpponentScore = 0;
+
+    // is the current player the host
+    private bool mPlayerIsHost;
+
+    // all participants in the game
     private List<Participant> mParticipants;
 
-    // messageStatus
-    private GameObject messageStatusPanel;
+    // Container for the chosen category
+    private CategoryContainer mCategoryContainer;
+
 
     public GameManager(){}
 
@@ -55,11 +58,14 @@ public class GameManager : RealTimeMultiplayerListener
             true, mOpponentId, mMessage);
     }
 
+    private void LoadCategory(string filename)
+    {
+        mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
+    }
+
     public void OnRealTimeMessageReceived(bool isReliable, string senderId, byte[] data)
     {
-        GameObject messageRecieved = GameObject.Find(MESSAGE_RECIEVED);
-        Text t = messageRecieved.GetComponent<Text>();
-        t.text = data[0].ToString();
+        
     }
 
     public static void CreateQuickGame()
@@ -118,7 +124,7 @@ public class GameManager : RealTimeMultiplayerListener
             mOpponentId = GetOpponentId();
 
             // load game scene
-            NavigationUtils.ChangeScene(1);
+            NavigationUtils.ShowGameScreen();
 
             Debug.Log("Room successfully connected. " + sInstance != null);
         }

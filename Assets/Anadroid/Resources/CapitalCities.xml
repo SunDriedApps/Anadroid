@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AnagramCategories>
+  
+  <Anagrams>
+    <Anagram>
+      <solution>Dublin</solution>  
+    </Anagram>
+    <Anagram>
+      <solution>Paris</solution>
+    </Anagram>
+  </Anagrams>
+  
+</AnagramCategories>
