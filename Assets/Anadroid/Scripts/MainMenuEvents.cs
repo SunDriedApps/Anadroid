@@ -10,17 +10,14 @@ public class MainMenuEvents : MonoBehaviour {
     private bool mProcessed = false;
 
     private System.Action<bool> mAuthCallback;
-    private bool mAuthOnStart = true;
     private bool mSigningIn = false;
 
     // Use this for initialization
     void Start()
     {
-        CategoryContainer cc = CategoryContainer.Load("CapitalCities");
-        foreach (Anagram a in cc.mAnagrams)
-        {
-            Debug.Log(a.GetSolution);
-        }
+        // a non silent authentication is when the user 
+        // explicity signs into their account
+        bool trySilentAuth = true;
 
         mAuthCallback = (bool success) =>
         {
@@ -34,23 +31,22 @@ public class MainMenuEvents : MonoBehaviour {
             }
             else
             {
+                // authentication failed; try to explicity sign in
+                trySilentAuth = false;
+
                 Debug.Log("Auth failed!!");
             }
         };
 
-        // enable debug logs
+        // build play games client
         var config = new PlayGamesClientConfiguration.Builder()
         .WithInvitationDelegate(InvitationManager.Instance.OnInvitationReceived)
         .Build();
         PlayGamesPlatform.InitializeInstance(config);
         PlayGamesPlatform.DebugLogEnabled = true;
 
-        // try silent authentication
-        if (mAuthOnStart)
-        {
-            Authorize(true);
-        }
-
+        // authorize player with google play servers
+        Authorize(trySilentAuth);
     }
 
     //Starts the signin process.
@@ -78,6 +74,8 @@ public class MainMenuEvents : MonoBehaviour {
             return;
         }
 
+        Debug.Log("****** State = " + GameManager.Instance.State.ToString());
+
         switch (GameManager.Instance.State)
         {
             case GameManager.GameState.SettingUp:
@@ -100,10 +98,6 @@ public class MainMenuEvents : MonoBehaviour {
             case GameManager.GameState.Playing:
                 mProcessed = false;
                 NavigationUtils.ShowGameScreen();
-                break;
-
-            default:
-                Debug.Log("RaceManager.Instance.State = " + GameManager.Instance.State);
                 break;
         }
     }

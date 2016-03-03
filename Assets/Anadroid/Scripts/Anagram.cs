@@ -2,24 +2,30 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Xml.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using System;
 
+[Serializable()]
 public class Anagram {
 
     [XmlElement("solution")]
     public string mSolution; // the correct solution of the anagram
 
-    private string mShuffled; // the shuffled solution
+    // the shuffled solution
+    private string mShuffled;
 
     public Anagram() {}
 
-    private string Shuffle()
+    // calculate mShuffled by shuffling the solution
+    public void Shuffle()
     {
         List<char> solution = new List<char>();
 
         // add solution to char array
         for (int i = 0; i < mSolution.Length; i++)
         {
-            solution[i] = mSolution[i];            
+            solution.Add(mSolution[i]);            
         }
 
         // shuffle solution
@@ -27,14 +33,41 @@ public class Anagram {
         int randIndex;
         while(solution.Count > 0)
         {
-            randIndex = Random.Range(0, solution.Count);
+            randIndex = UnityEngine.Random.Range(0, solution.Count);
 
             shuffled.Add(solution[randIndex]);
 
             solution.RemoveAt(randIndex);
         }
 
-        return string.Concat(shuffled); 
+        mShuffled = new string(shuffled.ToArray()); 
+    }
+
+    public bool Equals(Anagram anagram)
+    {
+        return mSolution.Equals(anagram.GetSolution);
+    }
+
+    // returns a byte array representing the given anagram
+    public static byte[] ToByteArray(Anagram anagram)
+    {
+        var formatter = new BinaryFormatter();
+        using (var stream = new MemoryStream())
+        {
+            formatter.Serialize(stream, anagram);
+
+            return stream.ToArray();
+        }
+    }
+
+    // returns an Anagram representing the given byte array
+    public static Anagram FromByteArray(byte[] anagramInBytes)
+    {
+        var formatter = new BinaryFormatter();
+        using (var stream = new MemoryStream(anagramInBytes))
+        {
+            return formatter.Deserialize(stream) as Anagram;
+        }
     }
 
     public string GetSolution
