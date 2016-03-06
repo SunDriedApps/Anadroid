@@ -86,4 +86,12 @@ public class Anagram {
             return mShuffled;
         }
     }
+
+    public int Length
+    {
+        get
+        {
+            return mSolution.Length;
+        }
+    }
 }
