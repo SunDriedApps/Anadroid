@@ -25,4 +25,16 @@ public class CategoryContainer
 
         return category;
     }
+
+    public Anagram GetAnagram()
+    {
+        // get random index to choose anagram from category
+        int index = Random.Range(0, mAnagrams.Count);
+
+        Anagram anagram = mAnagrams[index];
+
+        mAnagrams.RemoveAt(index);
+
+        return anagram;
+    }
 }
