@@ -32,25 +32,17 @@ public class GameScreenEvents : MonoBehaviour {
             return;
         }
 
-        Debug.Log(1);
-
         mLetters = new List<GameObject>();
 
         // get grid layouts from panels
         solutionGrid = solutionPanel.GetComponent<GridLayoutGroup>();
         shuffledGrid = shuffledPanel.GetComponent<GridLayoutGroup>();
 
-        Debug.Log(2);
-
         // set the categroy title
         categoryTitle.text = GameManager.Instance.GetChosenCatgeory;
 
-        Debug.Log(3);
-
         // attempt to get the first anagram
         UpdateCurrentAnagram();
-
-        Debug.Log(4);
     }
 
     public void Update()
@@ -63,6 +55,8 @@ public class GameScreenEvents : MonoBehaviour {
 
         switch(GameManager.Instance.State)
         {
+            case GameManager.GameState.GettingNewAnagram:
+                return;
             case GameManager.GameState.Aborted:
                 GameManager.Instance.CleanUp();
                 NavigationUtils.ShowMainMenu();
@@ -113,7 +107,7 @@ public class GameScreenEvents : MonoBehaviour {
         return true;
     }
 
-    // update the current anagram
+    // update the current anagram through the game manager
     private void UpdateCurrentAnagram()
     {
         // get new anagram
@@ -183,9 +177,17 @@ public class GameScreenEvents : MonoBehaviour {
         {
             if (AnagramSolved())
             {
-                // increment score and update score text
+                // increment score
                 GameManager.Instance.IncrementScore();
+
+                // send update to opponent
+                GameManager.Instance.SendScoreUpdate();
+
+                // update onscreen score
                 score.text = GameManager.Instance.GetScore.ToString();
+
+                // reset anagram timer
+                Timer.ResetTime();
 
                 Debug.Log("Anagram Solved!");
             }
@@ -207,6 +209,7 @@ public class GameScreenEvents : MonoBehaviour {
     // add letter to shuffled grid panel
     private void AddToShuffledGrid(GameObject letter)
     {
+
         letter.transform.SetParent(shuffledGrid.transform, false);
         letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
         letter.transform.localPosition = Vector3.zero;

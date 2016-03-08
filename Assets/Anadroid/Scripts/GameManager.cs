@@ -20,7 +20,7 @@ public class GameManager : RealTimeMultiplayerListener
     const int MESSAGE_INITIAL_ANAGRAM = 1;
     const int MESSAGE_ANAGRAM = 2;
 
-    // categories
+    // categories; used for title on game screen
     const string CATEGORY_CAPITAL_CITIES = "Capital Cities";
 
     // category file names
@@ -32,6 +32,7 @@ public class GameManager : RealTimeMultiplayerListener
     {
         SettingUp,
         Playing,
+        GettingNewAnagram,
         Finished,
         SetupFailed,
         Aborted
@@ -60,7 +61,10 @@ public class GameManager : RealTimeMultiplayerListener
     private string mChosenCategory;
 
     // the current anagram being solved
-    public Anagram mCurrentAnagram;
+    private Anagram mCurrentAnagram;
+
+    // have we been authenicated by the servers
+    private bool mAuthenticated = false;
 
     public GameManager()
     {
@@ -160,12 +164,10 @@ public class GameManager : RealTimeMultiplayerListener
         {
             case MESSAGE_SCORE_UPDATE:
                 mOpponentScore++;
-
                 if(mIsHost)
                 {
                     GetNextAnagram();
                 }
-
                 // has your opponent won the game?
                 if (mOpponentScore == MAX_SCORE_VS)
                 {
@@ -180,6 +182,8 @@ public class GameManager : RealTimeMultiplayerListener
 
             case MESSAGE_ANAGRAM:
                 mCurrentAnagram = Anagram.FromByteArray(anagramInBytes);
+                Timer.ResetTime();
+                mGameState = GameState.Playing;
                 break;
         }
     }
@@ -192,12 +196,25 @@ public class GameManager : RealTimeMultiplayerListener
     }
 
     // get the next anagram and send to opponent
-    // should only be used if we are hosting the game
-    private void GetNextAnagram()
+    public void GetNextAnagram()
     {
+        mGameState = GameManager.GameState.GettingNewAnagram;
+
+        // if we aren't hosting return and wait 
+        // for the next anagram to be sent instead
+        if (!mIsHost)
+        {
+            return;
+        }
+
         mCurrentAnagram = mCategoryContainer.GetAnagram();
         mCurrentAnagram.Shuffle();
+
         SendAnagram(MESSAGE_ANAGRAM, mCurrentAnagram);
+
+        Timer.ResetTime();
+
+        mGameState = GameManager.GameState.Playing;
     }
 
     // increment our score and send update to opponent
@@ -205,17 +222,16 @@ public class GameManager : RealTimeMultiplayerListener
     {
         mScore++;
 
-        SendMessage(MESSAGE_SCORE_UPDATE);
-
         // have you won the game?
         if (mScore == MAX_SCORE_VS)
         {
             mGameState = GameState.Finished;
         }
-        else if (mIsHost)
-        {
-            GetNextAnagram();
-        }
+    }
+
+    public void SendScoreUpdate()
+    {
+        SendMessage(MESSAGE_SCORE_UPDATE);
     }
 
     public static void CreateQuickGame()
@@ -351,5 +367,23 @@ public class GameManager : RealTimeMultiplayerListener
         {
             return mChosenCategory;
         }
+    }
+
+    public bool IsHost
+    {
+        get
+        {
+            return mIsHost;
+        }
+    }
+
+    public bool Authenticated()
+    {
+        return mAuthenticated;
+    }
+
+    public void SetAuthenticated(bool auth)
+    {
+        mAuthenticated = auth;
     }
 }
