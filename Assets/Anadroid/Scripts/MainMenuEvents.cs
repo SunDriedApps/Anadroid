@@ -4,8 +4,8 @@ using GooglePlayGames;
 using GooglePlayGames.BasicApi.Multiplayer;
 using GooglePlayGames.BasicApi;
 
-public class MainMenuEvents : MonoBehaviour {
-
+public class MainMenuEvents : MonoBehaviour
+{
     // To avoid processing events multiple times.
     private bool mProcessed = false;
 
@@ -15,10 +15,6 @@ public class MainMenuEvents : MonoBehaviour {
     // Use this for initialization
     void Start()
     {
-        // a non silent authentication is when the user 
-        // explicity signs into their account
-        bool trySilentAuth = true;
-
         mAuthCallback = (bool success) =>
         {
 
@@ -29,11 +25,9 @@ public class MainMenuEvents : MonoBehaviour {
             {
                 Debug.Log("Auth successful");
             }
+
             else
             {
-                // authentication failed; try to explicity sign in
-                trySilentAuth = false;
-
                 Debug.Log("Auth failed!!");
             }
         };
@@ -46,7 +40,7 @@ public class MainMenuEvents : MonoBehaviour {
         PlayGamesPlatform.DebugLogEnabled = true;
 
         // authorize player with google play servers
-        Authorize(trySilentAuth);
+        Authorize(false);
     }
 
     //Starts the signin process.
@@ -128,7 +122,7 @@ public class MainMenuEvents : MonoBehaviour {
 
     public void OnQuickMatch()
     {
-        if(mProcessed)
+        if (mProcessed)
         {
             return;
         }
