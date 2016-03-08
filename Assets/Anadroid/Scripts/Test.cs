@@ -131,8 +131,8 @@ public class Test : MonoBehaviour {
     private void AddToShuffledGrid(GameObject letter)
     {
         letter.transform.SetParent(shuffledGrid.transform, false);
-        letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-        letter.transform.localPosition = Vector3.zero;
+       // letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+       // letter.transform.localPosition = Vector3.zero;
     }
 
     // destroy letters in grid
