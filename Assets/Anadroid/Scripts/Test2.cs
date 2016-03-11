@@ -25,21 +25,24 @@ public class Test2 : MonoBehaviour
 
         mLetters = new List<GameObject>();
 
+
+        //GameObject letterTest = (GameObject)Instantiate(Resources.Load("EmptyLetterSlot"));
+       // AddToShuffledGrid(letterTest);
         // add shuffled letters to shuffled grid
         Text t;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 15; i++)
         {
-            GameObject letter = (GameObject)Instantiate(Resources.Load("AnagramLetter"));
+            GameObject letter = (GameObject)Instantiate(Resources.Load("Letter"));
 
             mLetters.Add(letter);
 
             t = letter.GetComponentInChildren<Text>();
             t.text = i.ToString();
 
-            letter.GetComponent<Button>().onClick.AddListener(() =>
+            /*letter.GetComponent<Button>().onClick.AddListener(() =>
             {
                 OnShuffledLetterClick(letter);
-            });
+            });*/
 
             // insert into shuffled grid
             AddToShuffledGrid(letter);  
@@ -88,12 +91,13 @@ public class Test2 : MonoBehaviour
         letter.GetComponent<Button>().onClick.RemoveAllListeners();
 
         // letter is now part of shuffled grid; add new click listener
-        letter.GetComponent<Button>().onClick.AddListener(() =>
+       /* letter.GetComponent<Button>().onClick.AddListener(() =>
         {
             OnShuffledLetterClick(letter);
-        });
+        });*/
     }
 
+    /*
     private void OnShuffledLetterClick(GameObject letter)
     {
         // insert in solution grid
@@ -121,6 +125,22 @@ public class Test2 : MonoBehaviour
             }
         }
     }
+    */
+
+    /*public  void solutionPanelCheck()
+    {
+        if (solutionPanel.transform.childCount == mLetters.Count)
+        {
+            if (AnagramSolved())
+            {
+                Debug.Log("Solved!");
+            }
+            else
+            {
+                Debug.Log("Incorrect!");
+            }
+        }
+    }*/
 
     // add letter to solution grid panel
     private void AddToSolutionGrid(GameObject letter)

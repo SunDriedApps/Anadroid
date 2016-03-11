@@ -3,7 +3,7 @@ using System.Collections;
 using GooglePlayGames;
 using GooglePlayGames.BasicApi.Multiplayer;
 using GooglePlayGames.BasicApi;
-{
+
 public class MainMenuEvents : MonoBehaviour {
 
     // To avoid processing events multiple times.
