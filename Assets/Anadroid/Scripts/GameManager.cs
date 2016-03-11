@@ -13,7 +13,7 @@ public class GameManager : RealTimeMultiplayerListener
     const int GAME_VARIENT_VS = 0;
     const int MIN_OPPONENTS = 1;
     const int MAX_OPPONENTS = 1;
-    const int MAX_SCORE_VS = 10;
+    const int MAX_SCORE_VS = 3;
 
     // message types
     const int MESSAGE_SCORE_UPDATE = 0;
@@ -32,7 +32,6 @@ public class GameManager : RealTimeMultiplayerListener
     {
         SettingUp,
         Playing,
-        GettingNewAnagram,
         Finished,
         SetupFailed,
         Aborted
@@ -62,9 +61,6 @@ public class GameManager : RealTimeMultiplayerListener
 
     // the current anagram being solved
     private Anagram mCurrentAnagram;
-
-    // have we been authenicated by the servers
-    private bool mAuthenticated = false;
 
     public GameManager()
     {
@@ -164,14 +160,15 @@ public class GameManager : RealTimeMultiplayerListener
         {
             case MESSAGE_SCORE_UPDATE:
                 mOpponentScore++;
-                if(mIsHost)
-                {
-                    GetNextAnagram();
-                }
+
                 // has your opponent won the game?
                 if (mOpponentScore == MAX_SCORE_VS)
                 {
                     mGameState = GameState.Finished;
+                }
+                else if (mIsHost)
+                {
+                    GetNextAnagram();
                 }
                 break;
 
@@ -198,13 +195,17 @@ public class GameManager : RealTimeMultiplayerListener
     // get the next anagram and send to opponent
     public void GetNextAnagram()
     {
-        mGameState = GameManager.GameState.GettingNewAnagram;
-
         // if we aren't hosting return and wait 
         // for the next anagram to be sent instead
         if (!mIsHost)
         {
             return;
+        }
+
+        // check if we've ran out of anagrams
+        if(mCategoryContainer.OutOfAnagrams())
+        {
+            LoadCategory(FILE_CAPITAL_CITIES);
         }
 
         mCurrentAnagram = mCategoryContainer.GetAnagram();
@@ -282,9 +283,9 @@ public class GameManager : RealTimeMultiplayerListener
 
     public void OnPeersDisconnected(string[] peers)
     {
-        Debug.Log("Peers disconnected");
-
         mGameState = GameState.Aborted;
+
+        Debug.Log("Peers disconnected");
     }
 
     public void OnRoomSetupProgress(float percent)
@@ -375,15 +376,5 @@ public class GameManager : RealTimeMultiplayerListener
         {
             return mIsHost;
         }
-    }
-
-    public bool Authenticated()
-    {
-        return mAuthenticated;
-    }
-
-    public void SetAuthenticated(bool auth)
-    {
-        mAuthenticated = auth;
     }
 }

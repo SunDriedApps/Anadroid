@@ -3,31 +3,51 @@ using System.Collections;
 using GooglePlayGames;
 using GooglePlayGames.BasicApi.Multiplayer;
 using GooglePlayGames.BasicApi;
+using UnityEngine.UI;
 
 public class MainMenuEvents : MonoBehaviour
 {
+    const string SIGN_IN_BUTTON_TEXT = "SIGN IN";
+    const string SIGN_OUT_BUTTON_TEXT = "SIGN OUT";
+
+    public GameObject dialogPanel;
+    public GameObject signInFailedDialog;
+    public GameObject searchingDialog;
+    public GameObject invitationDialog;
+    public Text invatationDialogPlayerName;
+    public Text signInButtonText;
+
     // To avoid processing events multiple times.
     private bool mProcessed = false;
 
+    // a callback to detect whether the sign in process was successful
     private System.Action<bool> mAuthCallback;
-    private bool mSigningIn = false;
 
-    // Use this for initialization
+    // are we currently signed into the play games servers?
+    private bool mSignedIn = false;
+
     void Start()
     {
+        if(GameManager.Instance != null)
+        {
+            GameManager.Instance.CleanUp();
+        }
+
         mAuthCallback = (bool success) =>
         {
-
             Debug.Log("In Auth callback, success = " + success);
 
-            mSigningIn = false;
             if (success)
             {
+                signInButtonText.text = SIGN_OUT_BUTTON_TEXT;
+                mSignedIn = true;
                 Debug.Log("Auth successful");
             }
 
             else
             {
+                dialogPanel.SetActive(true);
+                signInFailedDialog.SetActive(true);
                 Debug.Log("Auth failed!!");
             }
         };
@@ -46,15 +66,14 @@ public class MainMenuEvents : MonoBehaviour
     //Starts the signin process.
     void Authorize(bool silent)
     {
-        if (!mSigningIn)
+        if(mSignedIn == true)
         {
-            Debug.Log("Starting sign-in...");
-            PlayGamesPlatform.Instance.Authenticate(mAuthCallback, silent);
+            Debug.Log("Already signed in!");
+            return;
         }
-        else
-        {
-            Debug.Log("Already started signing in");
-        }
+
+        PlayGamesPlatform.Instance.Authenticate(mAuthCallback, silent);
+        Debug.Log("Starting sign-in...");
     }
 
     // called once per frame
@@ -67,8 +86,6 @@ public class MainMenuEvents : MonoBehaviour
         {
             return;
         }
-
-        Debug.Log("****** State = " + GameManager.Instance.State.ToString());
 
         switch (GameManager.Instance.State)
         {
@@ -104,18 +121,19 @@ public class MainMenuEvents : MonoBehaviour
             return;
         }
 
-        Invitation inv = InvitationManager.Instance.Invitation;
-        if (inv != null)
+        Invitation invite = InvitationManager.Instance.Invitation;
+        if (invite != null)
         {
             if (InvitationManager.Instance.ShouldAutoAccept)
             {
                 InvitationManager.Instance.Clear();
-                GameManager.AcceptInvitation(inv.InvitationId);
+                GameManager.AcceptInvitation(invite.InvitationId);
             }
             else
             {
-                // show the invitation screen
-                NavigationUtils.ShowInvitationScreen();
+                invatationDialogPlayerName.text = invite.Inviter.DisplayName;
+                dialogPanel.SetActive(true);
+                invitationDialog.SetActive(true);
             }
         }
     }
@@ -126,7 +144,11 @@ public class MainMenuEvents : MonoBehaviour
         {
             return;
         }
+
         mProcessed = true;
+
+        dialogPanel.SetActive(true);
+        searchingDialog.SetActive(true);
 
         GameManager.CreateQuickGame();
     }
@@ -149,21 +171,74 @@ public class MainMenuEvents : MonoBehaviour
         GameManager.AcceptFromInbox();
     }
 
-    public void OnSignOut()
+    // Sign in/Sign out button click 
+    public void OnSignOutClick()
     {
         if (GameManager.Instance != null)
         {
             GameManager.Instance.CleanUp();
         }
-        Debug.Log("Signing out...");
-        if (PlayGamesPlatform.Instance != null)
+
+        if(mSignedIn)
         {
-            PlayGamesPlatform.Instance.SignOut();
+            Debug.Log("Signing out...");
+            if (PlayGamesPlatform.Instance != null)
+            {
+                PlayGamesPlatform.Instance.SignOut();
+
+                signInButtonText.text = SIGN_IN_BUTTON_TEXT;
+            }
+            else
+            {
+                Debug.Log("PG Instance is null!");
+            }
+            mSignedIn = false;
         }
         else
         {
-            Debug.Log("PG Instance is null!");
+            Authorize(false);
         }
     }
 
+    // sign in failed dialog button click
+    public void OnSignInFailedClick()
+    {
+        dialogPanel.SetActive(false);
+        signInFailedDialog.SetActive(false);
+    }
+
+    // stop searching when searching panel is clicked
+    public void OnSearchingDialogClick()
+    {
+        dialogPanel.SetActive(false);
+        searchingDialog.SetActive(false);
+        GameManager.Instance.CleanUp();
+        mProcessed = false;
+    }
+
+    public void OnAcceptInvitationClick()
+    {
+        Invitation invite = InvitationManager.Instance.Invitation;
+        if (invite == null)
+        {
+            Debug.Log("No Invite!");
+            invitationDialog.SetActive(false);
+            dialogPanel.SetActive(false);
+            return;
+        }
+
+        InvitationManager.Instance.Clear();
+        GameManager.AcceptInvitation(invite.InvitationId);
+        invitationDialog.SetActive(false);
+        dialogPanel.SetActive(false);
+        Debug.Log("Invitation accepted");
+    }
+
+    public void OnDeclineInvitationClick()
+    {
+        InvitationManager.Instance.DeclineInvitation();
+        invitationDialog.SetActive(false);
+        dialogPanel.SetActive(false);
+        Debug.Log("Invitation declined");
+    }
 }

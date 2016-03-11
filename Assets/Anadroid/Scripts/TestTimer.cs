@@ -7,27 +7,31 @@ using UnityEngine.UI;
  * the amount of time a player will have to solve each anagram 
 **/
 
-public class Timer : MonoBehaviour {
+public class TestTimer : MonoBehaviour
+{
 
     // 20 seconds to solve each anagram
     private const float TIME_TO_SOLVE = 20.0f;
 
     public Image timeBar;
-    
+
     private static float sTimeRemaining;
 
-	void Start () {
+    void Start()
+    {
         sTimeRemaining = TIME_TO_SOLVE;
 
         UpdateTime();
-	}
-	
-	void Update () {
-        
+    }
+
+    void Update()
+    {
+
         // time up; move onto next anagram
         if (sTimeRemaining <= 0.0)
         {
-            GameManager.Instance.GetNextAnagram();
+            Test.TimeUp();
+            ResetTime();
         }
 
         UpdateTime();

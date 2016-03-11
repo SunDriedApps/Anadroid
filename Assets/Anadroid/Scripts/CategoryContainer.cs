@@ -37,4 +37,9 @@ public class CategoryContainer
 
         return anagram;
     }
+
+    public bool OutOfAnagrams()
+    {
+        return mAnagrams.Count == 0;
+    }
 }

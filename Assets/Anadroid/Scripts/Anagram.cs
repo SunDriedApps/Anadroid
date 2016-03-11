@@ -12,6 +12,9 @@ public class Anagram {
     [XmlElement("solution")]
     public string mSolution; // the correct solution of the anagram
 
+    [XmlElement("hint")]
+    public string mHint; // a hint used to solve the anagram
+
     // the shuffled solution
     private string mShuffled;
 
@@ -84,6 +87,14 @@ public class Anagram {
         get
         {
             return mShuffled;
+        }
+    }
+
+    public string GetHint
+    {
+        get
+        {
+            return mHint;
         }
     }
 

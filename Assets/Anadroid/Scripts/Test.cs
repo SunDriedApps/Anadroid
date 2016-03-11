@@ -4,17 +4,30 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class Test : MonoBehaviour {
+    const string FILE_CAPITAL_CITIES = "CapitalCities";
+    const int MAX_NUM_OF_HINTS = 1;
 
+    public Text hintText;
     public GameObject shuffledPanel;
     public GameObject solutionPanel;
+    public GameObject hintLifeBubble;
+    public GameObject shuffleLifeBubble;
 
     private GridLayoutGroup shuffledGrid;
     private GridLayoutGroup solutionGrid;
 
+    private Text letterText;
+
     // reference to all letters currently on screen
     private List<GameObject> mLetters;
 
-    private string mSolution = "23014";
+    private CategoryContainer mCategoryContainer;
+
+    private static Anagram mCurrentAnagram;
+
+    private static bool mTimeUp = false;
+
+    private int mNumOfUsedHints = 0;
 
     // Use this for initialization
     void Start ()
@@ -24,35 +37,41 @@ public class Test : MonoBehaviour {
 
         mLetters = new List<GameObject>();
 
-        // add shuffled letters to shuffled grid
-        Text t;
-        for (int i = 0; i < 5; i++)
-        {
-            GameObject letter = (GameObject) Instantiate(Resources.Load("AnagramLetter"));
+        mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
 
-            mLetters.Add(letter);
-
-            t = letter.GetComponentInChildren<Text>();
-            t.text = i.ToString();
-
-            letter.GetComponent<Button>().onClick.AddListener(() =>
-            {
-                OnShuffledLetterClick(letter);
-            });
-
-            // insert into shuffled grid
-            AddToShuffledGrid(letter);
-        }
+        UpdateCurrentAnagram();
     }
 
     void Update()
     {
-       
+        if(mTimeUp)
+        {
+            UpdateCurrentAnagram();
+            mTimeUp = false;
+        }
+    }
+
+    private void DisableLifeBubble(GameObject lifeBubble)
+    {
+        lifeBubble.GetComponentInChildren<Button>().interactable = false;
+
+        Image icon = GameObject.Find(lifeBubble.name + "/Icon").GetComponent<Image>();
+        icon.color = new Color(200, 200, 200, 0.4f);
+    }
+
+    private void EnableLifeBubble(GameObject lifeBubble)
+    {
+        // disable button
+        lifeBubble.GetComponentInChildren<Button>().interactable = true;
+
+        // change icon colour
+        Image icon = GameObject.Find(lifeBubble.name + "/Icon").GetComponent<Image>();
+        icon.color = Color.white;
     }
 
     private bool AnagramSolved()
     {
-        if(solutionPanel.transform.childCount < mLetters.Count)
+        if (solutionPanel.transform.childCount < mLetters.Count)
         {
             return false;
         }
@@ -60,13 +79,14 @@ public class Test : MonoBehaviour {
         char letter;
 
         // check every character against the solution
-        for(int i = 0; i < solutionPanel.transform.childCount; i++)
+        for (int i = 0; i < solutionPanel.transform.childCount; i++)
         {
             // get letter from game object
-            letter = char.Parse(solutionPanel.transform.GetChild(i).GetComponentInChildren<Text>().text);
+            letter = char.Parse(solutionPanel.transform.GetChild(i)
+                .GetComponentInChildren<Text>().text);
 
             // letter doesnt match with solution
-            if (letter != mSolution[i])
+            if (letter != mCurrentAnagram.GetSolution[i])
             {
                 return false;
             }
@@ -74,6 +94,47 @@ public class Test : MonoBehaviour {
 
         // all letters match with solution
         return true;
+    }
+
+    // update the current anagram through the game manager
+    public void UpdateCurrentAnagram()
+    {
+        ResetGrid(solutionPanel);
+        ResetGrid(shuffledPanel);
+
+        // get new anagram
+        mCurrentAnagram = mCategoryContainer.GetAnagram();
+
+        mCurrentAnagram.Shuffle();
+
+        AddAnagramToShuffleGrid();
+
+        mTimeUp = true;
+    }
+
+    private void AddAnagramToShuffleGrid()
+    {
+        // loop through each character and make a letter prefab
+        for (int i = 0; i < mCurrentAnagram.Length; i++)
+        {
+            // instantiate a letter prefab from the resources folder
+            GameObject letter = (GameObject)Instantiate(Resources.Load("AnagramLetter"));
+
+            // set text component of letter
+            letterText = letter.GetComponentInChildren<Text>();
+            letterText.text = mCurrentAnagram.GetShuffled[i].ToString();
+
+            // add letter to the shuffled grid
+            AddToShuffledGrid(letter);
+
+            // add click listener to move letter to solution grid
+            letter.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                OnShuffledLetterClick(letter);
+            });
+
+            mLetters.Add(letter);
+        }
     }
 
     private void OnSolutionLetterClick(GameObject letter)
@@ -142,5 +203,29 @@ public class Test : MonoBehaviour {
         {
             Destroy(letter);
         }
+    }
+
+    public static void TimeUp()
+    {
+        mTimeUp = true;
+    }
+
+    public void OnHintLifeBubbleClick()
+    {
+        Debug.Log("Hint clicked");
+
+        mNumOfUsedHints++;
+
+        hintText.text = mCurrentAnagram.GetHint;
+
+        DisableLifeBubble(hintLifeBubble);
+    }
+
+    // re-shuffle
+    public void OnShuffleLifeBubbleClick()
+    {
+        mCurrentAnagram.Shuffle();
+        ResetGrid(shuffledPanel);
+        AddAnagramToShuffleGrid();
     }
 }

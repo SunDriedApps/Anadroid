@@ -14,11 +14,6 @@ public class NavigationUtils : MonoBehaviour {
         ChangeScene(1);
     }
 
-    public static void ShowInvitationScreen()
-    {
-        ChangeScene(2);
-    }
-
 	private static void ChangeScene(int scene)
     {
         SceneManager.LoadScene(scene);

@@ -5,15 +5,28 @@ using System.Collections.Generic;
 
 public class GameScreenEvents : MonoBehaviour {
 
+    const string GAME_OVER_DIALOG_MESSAGE = "GameOverMessage";
+    const string MESSAGE_WINNER = "YOU WIN";
+    const string MESSAGE_LOSER = "YOU LOSE";
+    const int MAX_NUM_OF_HINTS = 1;
+
     // game objects and components
-    public Text categoryTitle;
     public Text score;
     public Text opponentScore;
+    public GameObject timer;
+    public Text hintText;
     public GameObject solutionPanel;
     public GameObject shuffledPanel;
+    public GameObject dialogPanel;
+    public GameObject gameOverDialog;
+    public GameObject opponentDisconnectedDialog;
     private GridLayoutGroup solutionGrid;
     private GridLayoutGroup shuffledGrid;
+    public GameObject shuffleLifeBubble;
+    public GameObject hintLifeBubble;
+    public GameObject revealLifeBubble;
 
+    
     // used to get reference to every letter's text component
     private Text letterText;
 
@@ -22,6 +35,12 @@ public class GameScreenEvents : MonoBehaviour {
 
     // the current anagram being solved
     private Anagram mCurrentAnagram;
+
+    // the number of hints used in the 
+    private int mNumOfUsedHints = 0;
+
+    // only 1 re-shuffle allowed per anagram
+    private bool mUsedShuffle = false;
 
 
     public void Start()
@@ -38,9 +57,6 @@ public class GameScreenEvents : MonoBehaviour {
         solutionGrid = solutionPanel.GetComponent<GridLayoutGroup>();
         shuffledGrid = shuffledPanel.GetComponent<GridLayoutGroup>();
 
-        // set the categroy title
-        categoryTitle.text = GameManager.Instance.GetChosenCatgeory;
-
         // attempt to get the first anagram
         UpdateCurrentAnagram();
     }
@@ -55,14 +71,15 @@ public class GameScreenEvents : MonoBehaviour {
 
         switch(GameManager.Instance.State)
         {
-            case GameManager.GameState.GettingNewAnagram:
-                return;
-            case GameManager.GameState.Aborted:
-                GameManager.Instance.CleanUp();
-                NavigationUtils.ShowMainMenu();
+            case GameManager.GameState.Finished:
+                timer.SetActive(false);
+                //gameOverDialog.SetActive(true);
                 break;
 
-            case GameManager.GameState.Finished:
+            case GameManager.GameState.Aborted:
+                timer.SetActive(false);
+                dialogPanel.SetActive(true);
+                opponentDisconnectedDialog.SetActive(true);
                 break;
         }
 
@@ -73,7 +90,22 @@ public class GameScreenEvents : MonoBehaviour {
             ResetGrid(solutionPanel);
             ResetGrid(shuffledPanel);
 
+            // clear hint text
+            hintText.text = "";
+
             UpdateCurrentAnagram();
+
+            // renable hint life bubble if we haven't reached maximum
+            if (mNumOfUsedHints != MAX_NUM_OF_HINTS)
+            {
+                EnableLifeBubble(hintLifeBubble);
+            }
+
+            if(mUsedShuffle)
+            {
+                mUsedShuffle = false;
+                EnableLifeBubble(shuffleLifeBubble);
+            }
         }
 
         // update opponent score
@@ -118,27 +150,7 @@ public class GameScreenEvents : MonoBehaviour {
             return;
         }
 
-        // loop through each character and make a letter prefab
-        for (int i = 0; i < mCurrentAnagram.Length; i++)
-        {
-            // instantiate a letter prefab from the resources folder
-            GameObject letter = (GameObject)Instantiate(Resources.Load("AnagramLetter"));
-
-            // set text component of letter
-            letterText = letter.GetComponentInChildren<Text>();
-            letterText.text = mCurrentAnagram.GetShuffled[i].ToString();
-
-            // add letter to the shuffled grid
-            AddToShuffledGrid(letter);
-
-            // add click listener to move letter to solution grid
-            letter.GetComponent<Button>().onClick.AddListener(() =>
-            {
-                OnShuffledLetterClick(letter);
-            });
-
-            mLetters.Add(letter);
-        }   
+        AddAnagramToShuffleGrid();
     }
 
     // handle the click event of a letter in the solution panel
@@ -224,5 +236,85 @@ public class GameScreenEvents : MonoBehaviour {
         }
 
         mLetters.Clear();
+    }
+
+    private void AddAnagramToShuffleGrid()
+    {
+        // loop through each character and make a letter prefab
+        for (int i = 0; i < mCurrentAnagram.Length; i++)
+        {
+            // instantiate a letter prefab from the resources folder
+            GameObject letter = (GameObject)Instantiate(Resources.Load("AnagramLetter"));
+
+            // set text component of letter
+            letterText = letter.GetComponentInChildren<Text>();
+            letterText.text = mCurrentAnagram.GetShuffled[i].ToString();
+
+            // add letter to the shuffled grid
+            AddToShuffledGrid(letter);
+
+            // add click listener to move letter to solution grid
+            letter.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                OnShuffledLetterClick(letter);
+            });
+
+            mLetters.Add(letter);
+        }
+    }
+
+    // re-shuffle
+    public void OnShuffleLifeBubbleClick()
+    {
+        mUsedShuffle = true;
+
+        mCurrentAnagram.Shuffle();
+
+        ResetGrid(shuffledPanel);
+
+        AddAnagramToShuffleGrid();
+
+        DisableLifeBubble(shuffleLifeBubble);
+    }
+
+    // show a hint for the current anagram
+    public void OnHintLifeBubbleClick()
+    {
+        mNumOfUsedHints++;
+
+        hintText.text = mCurrentAnagram.GetHint;
+
+        DisableLifeBubble(hintLifeBubble);
+    }
+
+    // reveal 2 letters from the solution
+    public void OnRevealLifeBubbleClick()
+    {
+        
+    }
+
+    private void DisableLifeBubble(GameObject lifeBubble)
+    {
+        // disable button
+        lifeBubble.GetComponentInChildren<Button>().interactable = false;
+
+        // change icon colour
+        Image icon = GameObject.Find(lifeBubble.name + "/Icon").GetComponent<Image>();
+        icon.color = new Color(200, 200, 200, 0.4f);
+    }
+
+    private void EnableLifeBubble(GameObject lifeBubble)
+    {
+        // disable button
+        lifeBubble.GetComponentInChildren<Button>().interactable = true;
+
+        // change icon colour
+        Image icon = GameObject.Find(lifeBubble.name + "/Icon").GetComponent<Image>();
+        icon.color = Color.white;
+    }
+
+    public void OnBackToMainScreenClicked()
+    {
+        NavigationUtils.ShowMainMenu();
     }
 }
