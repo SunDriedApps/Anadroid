@@ -48,7 +48,7 @@ public class Anagram {
 
     public bool Equals(Anagram anagram)
     {
-        return mSolution.Equals(anagram.GetSolution);
+        return mSolution.Equals(anagram.Solution);
     }
 
     // returns a byte array representing the given anagram
@@ -73,7 +73,7 @@ public class Anagram {
         }
     }
 
-    public string GetSolution
+    public string Solution
     {
         get
         {
@@ -82,7 +82,7 @@ public class Anagram {
         
     }
 
-    public string GetShuffled
+    public string Shuffled
     {
         get
         {
@@ -90,7 +90,7 @@ public class Anagram {
         }
     }
 
-    public string GetHint
+    public string Hint
     {
         get
         {

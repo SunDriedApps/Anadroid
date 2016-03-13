@@ -13,7 +13,7 @@ public class GameManager : RealTimeMultiplayerListener
     const int GAME_VARIENT_VS = 0;
     const int MIN_OPPONENTS = 1;
     const int MAX_OPPONENTS = 1;
-    const int MAX_SCORE_VS = 3;
+    const int MAX_ANAGRAMS_VS = 15;
 
     // message types
     const int MESSAGE_SCORE_UPDATE = 0;
@@ -46,9 +46,10 @@ public class GameManager : RealTimeMultiplayerListener
     // player scores
     private int mScore = 0;
     private int mOpponentScore = 0;
+    private int mAnagramCount = 1;
 
     // is the current player the host
-    private bool mIsHost = false;
+    private bool mWeAreHost = false;
 
     // all participants in the game
     private List<Participant> mParticipants;
@@ -109,17 +110,15 @@ public class GameManager : RealTimeMultiplayerListener
             mId = GetSelf().ParticipantId;
             mOpponentId = GetOpponentId();
 
-            // MAKING NEXUS HOST FOR TESTING ONLY
+            // MAKING S3 HOST FOR TESTING ONLY
             if(!GetSelf().DisplayName.Equals("UndergroundSquid16"))
             {
-                mIsHost = true;
+                mWeAreHost = true;
             }
 
             // check if we are host
-            if (mIsHost)
+            if (mWeAreHost)
             {
-                //mPlayerIsHost = true;
-
                 // load category
                 mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
 
@@ -160,13 +159,13 @@ public class GameManager : RealTimeMultiplayerListener
         {
             case MESSAGE_SCORE_UPDATE:
                 mOpponentScore++;
+                mAnagramCount++;
 
-                // has your opponent won the game?
-                if (mOpponentScore == MAX_SCORE_VS)
+                if(mAnagramCount == MAX_ANAGRAMS_VS)
                 {
                     mGameState = GameState.Finished;
                 }
-                else if (mIsHost)
+                else if (mWeAreHost)
                 {
                     GetNextAnagram();
                 }
@@ -179,7 +178,6 @@ public class GameManager : RealTimeMultiplayerListener
 
             case MESSAGE_ANAGRAM:
                 mCurrentAnagram = Anagram.FromByteArray(anagramInBytes);
-                Timer.ResetTime();
                 mGameState = GameState.Playing;
                 break;
         }
@@ -197,7 +195,7 @@ public class GameManager : RealTimeMultiplayerListener
     {
         // if we aren't hosting return and wait 
         // for the next anagram to be sent instead
-        if (!mIsHost)
+        if (!mWeAreHost)
         {
             return;
         }
@@ -213,8 +211,6 @@ public class GameManager : RealTimeMultiplayerListener
 
         SendAnagram(MESSAGE_ANAGRAM, mCurrentAnagram);
 
-        Timer.ResetTime();
-
         mGameState = GameManager.GameState.Playing;
     }
 
@@ -222,11 +218,16 @@ public class GameManager : RealTimeMultiplayerListener
     public void IncrementScore()
     {
         mScore++;
+        mAnagramCount++;
 
-        // have you won the game?
-        if (mScore == MAX_SCORE_VS)
+        // is the game over?
+        if (mScore == MAX_ANAGRAMS_VS)
         {
             mGameState = GameState.Finished;
+        }
+        else
+        {
+            GetNextAnagram();
         }
     }
 
@@ -338,7 +339,7 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    public Anagram GetCurrentAnagram
+    public Anagram CurrentAnagram
     {
         get
         {
@@ -346,7 +347,7 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    public int GetScore
+    public int Score
     {
         get
         {
@@ -354,7 +355,7 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    public int GetOpponentScore
+    public int OpponentScore
     {
         get
         {
@@ -362,7 +363,7 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    public string GetChosenCatgeory
+    public string ChosenCatgeory
     {
         get
         {
@@ -374,7 +375,23 @@ public class GameManager : RealTimeMultiplayerListener
     {
         get
         {
-            return mIsHost;
+            return mWeAreHost;
+        }
+    }
+
+    public int MaxAnagrams
+    {
+        get
+        {
+            return MAX_ANAGRAMS_VS;
+        }
+    }
+
+    public int AnagramCount
+    {
+        get
+        {
+            return mAnagramCount;
         }
     }
 }

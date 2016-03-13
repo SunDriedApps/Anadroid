@@ -4,13 +4,13 @@ using System.Collections;
 using UnityEngine.EventSystems;
 using System;
 
-public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IPointerUpHandler
+public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     Transform originalParent = null;
 
     GameObject letterGap = null;
 
-    private LetterOnPointerUp mLetterOnPointerUp;
+    private LetterOnEndDrag mLetterOnEndDrag;
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -59,6 +59,8 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IPointe
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        Debug.Log("pointer up called");
+
         this.transform.SetParent(originalParent);
         this.transform.SetSiblingIndex(letterGap.transform.GetSiblingIndex());
 
@@ -66,11 +68,25 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IPointe
 
         Destroy(letterGap);
 
-        mLetterOnPointerUp.OnPointerUp();
+        mLetterOnEndDrag.OnEndDrag();
     }
 
-    public void SetOnPointerUp(LetterOnPointerUp p)
+    public void SetOnEndDrag(LetterOnEndDrag p)
     {
-        mLetterOnPointerUp = p;
+        mLetterOnEndDrag = p;
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        Debug.Log("End drag called");
+
+        this.transform.SetParent(originalParent);
+        this.transform.SetSiblingIndex(letterGap.transform.GetSiblingIndex());
+
+        GetComponent<CanvasGroup>().blocksRaycasts = true;
+
+        Destroy(letterGap);
+
+        mLetterOnEndDrag.OnEndDrag();
     }
 }

@@ -1,4 +1,4 @@
-lastUpgrade=00931
+lastUpgrade=00932
 proj.AppId=885320711031
 and.BundleId=ie.sundriedapps.anadroid
 proj.classDir=Assets
@@ -7,3 +7,4 @@ and.ResourceData=%3c%3fxml+version%3d%221.0%22+encoding%3d%22utf-8%22%3f%3e%0d%0
 and.ClientId=885320711031-hhji9t5kbjuilo2u6njue3h0vvbraqea.apps.googleusercontent.com
 proj.requireGPlus=false
 android.SetupDone=true
+proj.pluginVersion=0.9.32

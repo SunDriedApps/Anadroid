@@ -2,36 +2,33 @@
 using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System;
 
-public class GameScreenEvents : MonoBehaviour {
+public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
 
-    const string GAME_OVER_DIALOG_MESSAGE = "GameOverMessage";
     const string MESSAGE_WINNER = "YOU WIN";
     const string MESSAGE_LOSER = "YOU LOSE";
-    const int MAX_NUM_OF_HINTS = 1;
+    const string GAME_OBJECT_LETTER_GAP = "LetterGap";
+    const string GAME_OBJECT_TIMER_BAR = "TimerBar";
+    const string PREFAB_ANAGRAM_LETTER = "Letter";
+    const int MAX_NUM_OF_HINTS = 2;
+    const float TOTAL_TIME_TO_SOLVE_ANAGRAM = 40.0f;
 
     // game objects and components
     public Text score;
     public Text opponentScore;
-    public GameObject timer;
+    public GameObject timerContainer;
+    private Image timerBar;
+    public Text anagramCountText;
     public Text hintText;
-    public GameObject solutionPanel;
-    public GameObject shuffledPanel;
+    public GameObject anagramPanel;
     public GameObject dialogPanel;
     public GameObject gameOverDialog;
     public GameObject opponentDisconnectedDialog;
-    private GridLayoutGroup solutionGrid;
-    private GridLayoutGroup shuffledGrid;
+    private GridLayoutGroup anagramGrid;
     public GameObject shuffleLifeBubble;
     public GameObject hintLifeBubble;
     public GameObject revealLifeBubble;
-
-    
-    // used to get reference to every letter's text component
-    private Text letterText;
-
-    // reference to all letters currently on screen
-    private List<GameObject> mLetters;
 
     // the current anagram being solved
     private Anagram mCurrentAnagram;
@@ -42,23 +39,38 @@ public class GameScreenEvents : MonoBehaviour {
     // only 1 re-shuffle allowed per anagram
     private bool mUsedShuffle = false;
 
+    // time remaining to solve the current anagram
+    private float mTimeRemaining;
+
 
     public void Start()
     {
-        
+
+        // disable standby on android device
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
+        // get timer image
+        timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
+
+        mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
+
+        UpdateTimer();
+
         if(GameManager.Instance == null)
         {
             return;
         }
 
-        mLetters = new List<GameObject>();
+        UpdateAnagramCountText();
 
         // get grid layouts from panels
-        solutionGrid = solutionPanel.GetComponent<GridLayoutGroup>();
-        shuffledGrid = shuffledPanel.GetComponent<GridLayoutGroup>();
+        anagramGrid = anagramPanel.GetComponent<GridLayoutGroup>();
 
         // attempt to get the first anagram
-        UpdateCurrentAnagram();
+        mCurrentAnagram = GameManager.Instance.CurrentAnagram;
+
+        // add anagram to grid
+        AddAnagramToGrid();
     }
 
     public void Update()
@@ -72,30 +84,39 @@ public class GameScreenEvents : MonoBehaviour {
         switch(GameManager.Instance.State)
         {
             case GameManager.GameState.Finished:
-                timer.SetActive(false);
+                timerContainer.SetActive(false);
                 //gameOverDialog.SetActive(true);
                 break;
 
             case GameManager.GameState.Aborted:
-                timer.SetActive(false);
+                timerContainer.SetActive(false);
                 dialogPanel.SetActive(true);
                 opponentDisconnectedDialog.SetActive(true);
                 break;
         }
 
-        // check if we've moved onto a new anagram
-        if (!mCurrentAnagram.Equals(GameManager.Instance.GetCurrentAnagram)) {
+        // get a new anagram if we've ran out of time
+        if (mTimeRemaining <= 0)
+        {
+            GameManager.Instance.GetNextAnagram();
+        }
+
+        UpdateTimer();
+
+        // check with the game manager to see if we've moved onto a new anagram
+        if (!mCurrentAnagram.Equals(GameManager.Instance.CurrentAnagram)) {
+
+            Debug.Log("Moving onto new anagram");
             
-            // reset both grids
-            ResetGrid(solutionPanel);
-            ResetGrid(shuffledPanel);
+            // reset anagram panel
+            ResetPanel(anagramPanel);
 
             // clear hint text
             hintText.text = "";
 
-            UpdateCurrentAnagram();
+            mCurrentAnagram = GameManager.Instance.CurrentAnagram;
 
-            // renable hint life bubble if we haven't reached maximum
+            // re-enable hint life bubble if we haven't used max amount
             if (mNumOfUsedHints != MAX_NUM_OF_HINTS)
             {
                 EnableLifeBubble(hintLifeBubble);
@@ -106,30 +127,63 @@ public class GameScreenEvents : MonoBehaviour {
                 mUsedShuffle = false;
                 EnableLifeBubble(shuffleLifeBubble);
             }
+
+            AddAnagramToGrid();
+
+            ResetTimer();
+
+            // update anagram count text
+            UpdateAnagramCountText();
         }
 
         // update opponent score
-        opponentScore.text = GameManager.Instance.GetOpponentScore.ToString();
+        opponentScore.text = GameManager.Instance.OpponentScore.ToString();
+    }
+
+    // decrement time and update text
+    private void UpdateTimer()
+    {
+        mTimeRemaining -= Time.deltaTime;
+
+        // update time display
+        timerBar.fillAmount = mTimeRemaining / TOTAL_TIME_TO_SOLVE_ANAGRAM;
+    }
+
+    private void ResetTimer()
+    {
+        mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
     }
 
     private bool AnagramSolved()
     {
-        if (solutionPanel.transform.childCount < mLetters.Count)
-        {
-            return false;
-        }
-
         char letter;
+        int index;
+        bool pastLetterGap = false;
 
         // check every character against the solution
-        for (int i = 0; i < solutionPanel.transform.childCount; i++)
+        for (int i = 0; i < anagramPanel.transform.childCount; i++)
         {
+            if (anagramPanel.transform.GetChild(i).name == GAME_OBJECT_LETTER_GAP)
+            {
+                pastLetterGap = true;
+                continue;
+            }
+
+            if (pastLetterGap)
+            {
+                index = i - 1;
+            }
+            else
+            {
+                index = i;
+            }
+
             // get letter from game object
-            letter = char.Parse(solutionPanel.transform.GetChild(i)
+            letter = char.Parse(anagramPanel.transform.GetChild(i)
                 .GetComponentInChildren<Text>().text);
 
             // letter doesnt match with solution
-            if (letter != mCurrentAnagram.GetSolution[i])
+            if (letter != mCurrentAnagram.Solution[index])
             {
                 return false;
             }
@@ -139,127 +193,77 @@ public class GameScreenEvents : MonoBehaviour {
         return true;
     }
 
-    // update the current anagram through the game manager
-    private void UpdateCurrentAnagram()
+    // destroy letters in grid
+    private void ResetPanel(GameObject gridPanel)
     {
-        // get new anagram
-        mCurrentAnagram = GameManager.Instance.GetCurrentAnagram;
+        Debug.Log("Resetting panel");
 
+        for(int i = 0; i < anagramPanel.transform.childCount; i++)
+        {
+            Destroy(anagramPanel.transform.GetChild(i).gameObject);
+        }
+    }
+
+    // used to get reference to every letter's text component
+    private Text letterText;
+
+    // add the current anagram to the grid
+    private void AddAnagramToGrid()
+    {
         if(mCurrentAnagram == null)
         {
+            Debug.Log("AddAnagramToGrid() returning early current anagram = null");
             return;
         }
 
-        AddAnagramToShuffleGrid();
-    }
-
-    // handle the click event of a letter in the solution panel
-    private void OnSolutionLetterClick(GameObject letter)
-    {
-        // insert into shuffled grid
-        AddToShuffledGrid(letter);
-
-        // remove previous listener
-        letter.GetComponent<Button>().onClick.RemoveAllListeners();
-
-        // add click listener to move letter to shuffled grid
-        letter.GetComponent<Button>().onClick.AddListener(() =>
-        {
-            OnShuffledLetterClick(letter);
-        });
-    }
-
-    // handle a click event of a letter in the shuffle panel
-    private void OnShuffledLetterClick(GameObject letter)
-    {
-        // insert in solution grid
-        AddToSolutionGrid(letter);
-
-        // remove previous listener
-        letter.GetComponent<Button>().onClick.RemoveAllListeners();
-
-        // letter is now part of solution grid; add new click listener
-        letter.GetComponent<Button>().onClick.AddListener(() =>
-        {
-            OnSolutionLetterClick(letter);
-        });
-
-        // check if we've had a guess at the solution
-        if (solutionPanel.transform.childCount == mLetters.Count)
-        {
-            if (AnagramSolved())
-            {
-                // increment score
-                GameManager.Instance.IncrementScore();
-
-                // send update to opponent
-                GameManager.Instance.SendScoreUpdate();
-
-                // update onscreen score
-                score.text = GameManager.Instance.GetScore.ToString();
-
-                // reset anagram timer
-                Timer.ResetTime();
-
-                Debug.Log("Anagram Solved!");
-            }
-            else
-            {
-                Debug.Log("Incorrect guess!");
-            }
-        }
-    }
-
-    // add letter to solution grid panel
-    private void AddToSolutionGrid(GameObject letter)
-    {
-        letter.transform.SetParent(solutionGrid.transform, false);
-        letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-        letter.transform.localPosition = Vector3.zero;
-    }
-
-    // add letter to shuffled grid panel
-    private void AddToShuffledGrid(GameObject letter)
-    {
-
-        letter.transform.SetParent(shuffledGrid.transform, false);
-        letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-        letter.transform.localPosition = Vector3.zero;
-    }
-
-    // destroy letters in grid
-    private void ResetGrid(GameObject gridPanel)
-    {
-        foreach (GameObject letter in mLetters)
-        {
-            Destroy(letter);
-        }
-
-        mLetters.Clear();
-    }
-
-    private void AddAnagramToShuffleGrid()
-    {
-        // loop through each character and make a letter prefab
+        // iterate through each character and make a letter prefab
         for (int i = 0; i < mCurrentAnagram.Length; i++)
         {
             // instantiate a letter prefab from the resources folder
-            GameObject letter = (GameObject)Instantiate(Resources.Load("AnagramLetter"));
+            GameObject letter = (GameObject)Instantiate(Resources.Load(PREFAB_ANAGRAM_LETTER));
 
             // set text component of letter
             letterText = letter.GetComponentInChildren<Text>();
-            letterText.text = mCurrentAnagram.GetShuffled[i].ToString();
+            letterText.text = mCurrentAnagram.Shuffled[i].ToString();
 
-            // add letter to the shuffled grid
-            AddToShuffledGrid(letter);
+            // set the LetterOnEndDrag interface in each letter's draggable script
+            // to this script in order to OnEndDrag after the letter
+            letter.GetComponent<Draggable>().SetOnEndDrag(this);
 
-            // add click listener to move letter to solution grid
-            letter.GetComponent<Button>().onClick.AddListener(() =>
-            {
-                OnShuffledLetterClick(letter);
-            });
+            // add letter to the anagram panel
+            AddLetterToGrid(letter);
+        }
+    }
 
-            mLetters.Add(letter);
+    // add letter to anagram grid
+    private void AddLetterToGrid(GameObject letter)
+    {
+        letter.transform.SetParent(anagramGrid.transform, false);
+        letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+        letter.transform.localPosition = Vector3.zero;
+    }
+
+    // implementing the LetterOnEndDrag interface
+    public void OnEndDrag()
+    {
+        Debug.Log("OnPoinerUp Called");
+
+        if (AnagramSolved())
+        {
+            Debug.Log("Solved!");
+
+            // increment score
+            GameManager.Instance.IncrementScore();
+
+            // send update to opponent
+            GameManager.Instance.SendScoreUpdate();
+
+            // update onscreen score
+            score.text = GameManager.Instance.Score.ToString();
+        }
+        else
+        {
+            Debug.Log("Not solved");
         }
     }
 
@@ -270,9 +274,9 @@ public class GameScreenEvents : MonoBehaviour {
 
         mCurrentAnagram.Shuffle();
 
-        ResetGrid(shuffledPanel);
+        ResetPanel(anagramPanel);
 
-        AddAnagramToShuffleGrid();
+        AddAnagramToGrid();
 
         DisableLifeBubble(shuffleLifeBubble);
     }
@@ -282,7 +286,7 @@ public class GameScreenEvents : MonoBehaviour {
     {
         mNumOfUsedHints++;
 
-        hintText.text = mCurrentAnagram.GetHint;
+        hintText.text = mCurrentAnagram.Hint;
 
         DisableLifeBubble(hintLifeBubble);
     }
@@ -313,8 +317,17 @@ public class GameScreenEvents : MonoBehaviour {
         icon.color = Color.white;
     }
 
+    // an onclick method assigned through the unity editor
     public void OnBackToMainScreenClicked()
     {
         NavigationUtils.ShowMainMenu();
+    }
+
+    // set the anagram count text to display what number anagram
+    // we are currently on out of the total number of anagrams
+    private void UpdateAnagramCountText()
+    {
+        anagramCountText.text = GameManager.Instance.AnagramCount.ToString() +
+            "/" + GameManager.Instance.MaxAnagrams.ToString();
     }
 }

@@ -5,16 +5,20 @@ using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using System;
 
-public class Test : MonoBehaviour, LetterOnPointerUp {
+public class Test : MonoBehaviour, LetterOnEndDrag {
     const string PREFAB_ANAGRAM_LETTER = "Letter";
     const string FILE_CAPITAL_CITIES = "CapitalCities";
     const string LETTER_GAP_NAME = "LetterGap";
+    const string GAME_OBJECT_TIMER_BAR = "TimerBar";
     const int MAX_NUM_OF_HINTS = 1;
+    const float TIME_TO_SOLVE = 20.0f;
 
     public Text hintText;
     public GameObject anagramPanel;
     public GameObject hintLifeBubble;
     public GameObject shuffleLifeBubble;
+    public GameObject timeContainer;
+    private Image timerBar;
 
     private GridLayoutGroup anagramGrid;
 
@@ -24,28 +28,54 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
 
     private static Anagram mCurrentAnagram;
 
-    private static bool mTimeUp = false;
-
     private int mNumOfUsedHints = 0;
+
+    private float mTimeRemaining;
 
     // Use this for initialization
     void Start ()
     {
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
         anagramGrid = anagramPanel.GetComponent<GridLayoutGroup>();
 
         mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
 
+        timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
+
+        Debug.Log(timerBar.name);
+
         UpdateCurrentAnagram();
+
+        mTimeRemaining = TIME_TO_SOLVE;
+
+        UpdateTime();
     }
 
     void Update()
     {
-        if(mTimeUp)
+        if(mTimeRemaining <= 0)
         {
             Debug.Log("Time up");
             UpdateCurrentAnagram();
-            mTimeUp = false;
+            ResetPanel(anagramPanel);
         }
+
+        UpdateTime();
+    }
+
+    // decrement time and update text
+    private void UpdateTime()
+    {
+        mTimeRemaining -= Time.deltaTime;
+
+        // update time display
+        timerBar.fillAmount = mTimeRemaining / TIME_TO_SOLVE;
+    }
+
+    private void ResetTime()
+    {
+        mTimeRemaining = TIME_TO_SOLVE;
     }
 
     private bool AnagramSolved()
@@ -53,8 +83,6 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
         Debug.Log("AnagramSolved called. Child count = " + anagramPanel.transform.childCount);
 
         char letter;
-
-
         int index;
         bool pastLetterGap = false;
 
@@ -81,7 +109,7 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
                 .GetComponentInChildren<Text>().text);
 
             // letter doesnt match with solution
-            if (letter != mCurrentAnagram.GetSolution[index])
+            if (letter != mCurrentAnagram.Solution[index])
             {
                 return false;
             }
@@ -112,9 +140,9 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
 
             // set text component of letter
             letterText = letter.GetComponentInChildren<Text>();
-            letterText.text = mCurrentAnagram.GetShuffled[i].ToString();
+            letterText.text = mCurrentAnagram.Shuffled[i].ToString();
 
-            letter.GetComponent<Draggable>().SetOnPointerUp(this);
+            letter.GetComponent<Draggable>().SetOnEndDrag(this);
 
             // add letter to the anagram panel
             AddLetterToGrid(letter);
@@ -130,25 +158,20 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
     }
 
     // destroy letters in grid
-    private void ResetGrid(GameObject gridPanel)
+    private void ResetPanel(GameObject gridPanel)
     {
-        for(int i = 0; i < anagramPanel.transform.childCount; i++)
+        for (int i = 0; i < anagramPanel.transform.childCount; i++)
         {
             Debug.Log(anagramPanel.transform.GetChild(i).name);
             Destroy(anagramPanel.transform.GetChild(i).gameObject);
         }
     }
 
-    public static void TimeUp()
-    {
-        mTimeUp = true;
-    }
-
     public void OnHintLifeBubbleClick()
     {
         mNumOfUsedHints++;
 
-        hintText.text = mCurrentAnagram.GetHint;
+        hintText.text = mCurrentAnagram.Hint;
 
         DisableLifeBubble(hintLifeBubble);
     }
@@ -157,7 +180,7 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
     public void OnShuffleLifeBubbleClick()
     {
         mCurrentAnagram.Shuffle();
-        ResetGrid(anagramPanel);
+        ResetPanel(anagramPanel);
         AddAnagramToGrid();
     }
 
@@ -179,13 +202,13 @@ public class Test : MonoBehaviour, LetterOnPointerUp {
         icon.color = Color.white;
     }
 
-    public void OnPointerUp()
+    public void OnEndDrag()
     {
         if (AnagramSolved())
         {
             Debug.Log("Solved!");
 
-            ResetGrid(anagramPanel);
+            ResetPanel(anagramPanel);
             UpdateCurrentAnagram();
         }
         else

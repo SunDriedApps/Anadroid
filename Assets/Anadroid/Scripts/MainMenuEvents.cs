@@ -28,6 +28,8 @@ public class MainMenuEvents : MonoBehaviour
 
     void Start()
     {
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
         if(GameManager.Instance != null)
         {
             GameManager.Instance.CleanUp();
