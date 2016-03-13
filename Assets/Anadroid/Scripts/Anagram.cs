@@ -20,30 +20,29 @@ public class Anagram {
 
     public Anagram() {}
 
-    // calculate mShuffled by shuffling the solution
+    // calculate mShuffled by using the Fisher-Yates shuffle
+    private static System.Random random = new System.Random();
     public void Shuffle()
     {
-        List<char> solution = new List<char>();
-
-        // add solution to char array
-        for (int i = 0; i < mSolution.Length; i++)
+        char[] shuffled = mSolution.ToCharArray();
+        Debug.Log(mSolution);
+        Debug.Log(shuffled.Length);
+        for(int i = 0; i < shuffled.Length; i++)
         {
-            solution.Add(mSolution[i]);
+            Debug.Log(i + " " + shuffled[i]);
         }
 
-        // shuffle solution
-        List<char> shuffled = new List<char>();
-        int randIndex;
-        while (solution.Count > 0)
+        int n = shuffled.Length;
+        while (n > 1)
         {
-            randIndex = UnityEngine.Random.Range(0, solution.Count);
-
-            shuffled.Add(solution[randIndex]);
-
-            solution.RemoveAt(randIndex);
+            n--;
+            int randomIndex = random.Next(n + 1);
+            char c = shuffled[randomIndex];
+            shuffled[randomIndex] = shuffled[n];
+            shuffled[n] = c;
         }
 
-        mShuffled = new string(shuffled.ToArray());
+        mShuffled = new string(shuffled);
     }
 
 
