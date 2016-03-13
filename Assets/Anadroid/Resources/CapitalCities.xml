@@ -2,55 +2,7 @@
 <AnagramCategories>
   
   <Anagrams>
-    <Anagram>
-      <solution>ATHENS</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>BERLIN</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>BUDAPEST</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>BRUSSELS</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>COPENHAGEN</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>DUBLIN</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>HELSINKI</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>KIEV</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>LISBON</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>LONDON</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>MADRID</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
-      <solution>MOSCOW</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
-    <Anagram>
+       <Anagram>
       <solution>OSLO</solution>
       <hint>Super awesome hint</hint>
     </Anagram>
@@ -62,10 +14,7 @@
       <solution>ROME</solution>
       <hint>Super awesome hint</hint>
     </Anagram>
-    <Anagram>
-      <solution>STOCKHOLM</solution>
-      <hint>Super awesome hint</hint>
-    </Anagram>
+   
     <Anagram>
       <solution>VIENNA</solution>
       <hint>Super awesome hint</hint>

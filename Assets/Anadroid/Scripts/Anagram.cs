@@ -28,13 +28,13 @@ public class Anagram {
         // add solution to char array
         for (int i = 0; i < mSolution.Length; i++)
         {
-            solution.Add(mSolution[i]);            
+            solution.Add(mSolution[i]);
         }
 
         // shuffle solution
         List<char> shuffled = new List<char>();
         int randIndex;
-        while(solution.Count > 0)
+        while (solution.Count > 0)
         {
             randIndex = UnityEngine.Random.Range(0, solution.Count);
 
@@ -43,8 +43,9 @@ public class Anagram {
             solution.RemoveAt(randIndex);
         }
 
-        mShuffled = new string(shuffled.ToArray()); 
+        mShuffled = new string(shuffled.ToArray());
     }
+
 
     public bool Equals(Anagram anagram)
     {
