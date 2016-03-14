@@ -10,6 +10,12 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
     const string FILE_CAPITAL_CITIES = "CapitalCities";
     const string LETTER_GAP_NAME = "LetterGap";
     const string GAME_OBJECT_TIMER_BAR = "TimerBar";
+    const string GAME_OBJECT_READY_BUTTON = "ReadyUpButton";
+    const string GAME_OBJECT_READY_UP_BUTTON_TEXT = "ReadyUpButtonText";
+    const string GAME_OBJECT_PRE_GAME_MESSAGE = "PreGameMessageText";
+    const string GAME_OBJECT_PRE_GAME_CATEGORY = "GameCategoryText";
+    const string GAME_OBJECT_GAME_TYPE = "GameTypeContentText";
+    const string GAME_OBJECT_PRE_GAME_OBJECTIVE = "ObjectiveContentText";
     const int MAX_NUM_OF_HINTS = 1;
     const float TIME_TO_SOLVE = 20.0f;
 
@@ -50,6 +56,8 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
         mTimeRemaining = TIME_TO_SOLVE;
 
         UpdateTime();
+
+        GameObject.Find(GAME_OBJECT_GAME_TYPE).GetComponent<Text>().text = "FFFFFF";
     }
 
     void Update()

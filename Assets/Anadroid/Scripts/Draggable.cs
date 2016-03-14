@@ -57,20 +57,6 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         letterGap.transform.SetSiblingIndex(newSiblingIndex); 
     }
 
-    public void OnPointerUp(PointerEventData eventData)
-    {
-        Debug.Log("pointer up called");
-
-        this.transform.SetParent(originalParent);
-        this.transform.SetSiblingIndex(letterGap.transform.GetSiblingIndex());
-
-        GetComponent<CanvasGroup>().blocksRaycasts = true;
-
-        Destroy(letterGap);
-
-        mLetterOnEndDrag.OnEndDrag();
-    }
-
     public void SetOnEndDrag(LetterOnEndDrag p)
     {
         mLetterOnEndDrag = p;

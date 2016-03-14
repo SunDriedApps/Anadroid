@@ -6,11 +6,18 @@ using System;
 
 public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
 
-    const string MESSAGE_WINNER = "YOU WIN";
-    const string MESSAGE_LOSER = "YOU LOSE";
     const string GAME_OBJECT_LETTER_GAP = "LetterGap";
     const string GAME_OBJECT_TIMER_BAR = "TimerBar";
+    const string GAME_OBJECT_READY_BUTTON = "ReadyUpButton";
+    const string GAME_OBJECT_READY_UP_BUTTON_TEXT = "ReadyUpButtonText";
+    const string GAME_OBJECT_PRE_GAME_MESSAGE = "PreGameMessageText";
+    const string GAME_OBJECT_PRE_GAME_CATEGORY = "GameCategoryText";
+    const string GAME_OBJECT_GAME_TYPE = "GameTypeContentText";
+    const string GAME_OBJECT_PRE_GAME_OBJECTIVE = "ObjectiveContentText";
     const string PREFAB_ANAGRAM_LETTER = "Letter";
+    const string READY_TEXT = "READY";
+    const string WAITING_FOR_OPPONENT_TEXT = "Waiting for opponent";
+    const string GAME_OBJECTIVE_VS = "Gain a point for every anagram solved";
     const int MAX_NUM_OF_HINTS = 2;
     const float TOTAL_TIME_TO_SOLVE_ANAGRAM = 40.0f;
 
@@ -23,8 +30,9 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
     public Text hintText;
     public GameObject anagramPanel;
     public GameObject dialogPanel;
-    public GameObject gameOverDialog;
     public GameObject opponentDisconnectedDialog;
+    public GameObject preGameDialog;
+    public GameObject postGameDialog;
     private GridLayoutGroup anagramGrid;
     public GameObject shuffleLifeBubble;
     public GameObject hintLifeBubble;
@@ -42,6 +50,15 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
     // time remaining to solve the current anagram
     private float mTimeRemaining;
 
+    // have we clicked ready
+    private bool mReady = false;
+
+    // has the game started?
+    private bool mGameStarted = false;
+
+    // color for disabled or pressed text components
+    Color mWhiteDisabled;
+
 
     public void Start()
     {
@@ -52,25 +69,39 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
         // get timer image
         timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
 
-        mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
-
-        UpdateTimer();
-
-        if(GameManager.Instance == null)
-        {
-            return;
-        }
-
-        UpdateAnagramCountText();
-
         // get grid layouts from panels
         anagramGrid = anagramPanel.GetComponent<GridLayoutGroup>();
 
-        // attempt to get the first anagram
-        mCurrentAnagram = GameManager.Instance.CurrentAnagram;
+        mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
 
-        // add anagram to grid
-        AddAnagramToGrid();
+        // show pre game dialog
+        dialogPanel.SetActive(true);
+        preGameDialog.SetActive(true);
+
+        // set pre game information
+        GameObject.Find(GAME_OBJECT_PRE_GAME_CATEGORY)
+            .GetComponent<Text>().text = GameManager.Instance.Catgeory;
+
+        GameObject.Find(GAME_OBJECT_GAME_TYPE)
+            .GetComponent<Text>().text = GameManager.Instance.GameType;
+
+        GameObject.Find(GAME_OBJECT_PRE_GAME_OBJECTIVE)
+            .GetComponent<Text>().text = GetGameObjective();
+
+        mWhiteDisabled = Color.white;
+        mWhiteDisabled.a = 0.4f;
+    }
+
+    // return a string describing the game type objective
+    private string GetGameObjective()
+    {
+        switch(GameManager.Instance.GameType)
+        {
+            case GameManager.GAME_TYPE_VS:
+                return GAME_OBJECTIVE_VS;
+            default:
+                return null;
+        }
     }
 
     public void Update()
@@ -95,13 +126,44 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
                 break;
         }
 
+        // if either player isn't ready to play return
+        if (!mReady || !GameManager.Instance.OpponentReady)
+        {
+            Debug.Log("Players not ready");
+            return;
+        }
+        // both players are ready so get the first anagram
+        else if (!mGameStarted)
+        {
+
+            // attempt to get the first anagram
+            mCurrentAnagram = GameManager.Instance.CurrentAnagram;
+
+            // add anagram to grid
+            AddAnagramToGrid();
+
+            UpdateAnagramCountText();
+
+            mGameStarted = true;
+
+            // hide pre game dialog
+            dialogPanel.SetActive(false);
+            preGameDialog.SetActive(false);
+
+            Debug.Log("Game started");
+        }
+
         // get a new anagram if we've ran out of time
         if (mTimeRemaining <= 0)
         {
+            GameManager.Instance.IncrementAnagramCount();
             GameManager.Instance.GetNextAnagram();
         }
 
-        UpdateTimer();
+        if(mGameStarted)
+        {
+            UpdateTimer();
+        }
 
         // check with the game manager to see if we've moved onto a new anagram
         if (!mCurrentAnagram.Equals(GameManager.Instance.CurrentAnagram)) {
@@ -256,7 +318,7 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
             GameManager.Instance.IncrementScore();
 
             // send update to opponent
-            GameManager.Instance.SendScoreUpdate();
+            GameManager.Instance.SendMessage(GameManager.MESSAGE_SCORE_UPDATE);
 
             // update onscreen score
             score.text = GameManager.Instance.Score.ToString();
@@ -329,5 +391,29 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
     {
         anagramCountText.text = GameManager.Instance.AnagramCount.ToString() +
             "/" + GameManager.Instance.MaxAnagrams.ToString();
+    }
+
+    public void OnReadyUpClick()
+    {
+        Debug.Log("Ready clicked");
+
+        // we're ready to play
+        mReady = true;
+
+        // let your opponent know you're ready to play
+        GameManager.Instance.SendMessage(GameManager.MESSAGE_OPPONENT_READY);
+
+        // update ready button text
+        GameObject.Find(GAME_OBJECT_READY_UP_BUTTON_TEXT)
+            .GetComponent<Text>().text = READY_TEXT;
+
+        // disable button
+        GameObject readyButton = GameObject.Find(GAME_OBJECT_READY_BUTTON);
+        readyButton.GetComponent<Button>().interactable = false;
+        readyButton.GetComponentInChildren<Text>().color = mWhiteDisabled;
+
+        // update message
+        GameObject.Find(GAME_OBJECT_PRE_GAME_MESSAGE)
+            .GetComponent<Text>().text = WAITING_FOR_OPPONENT_TEXT;
     }
 }
