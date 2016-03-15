@@ -16,15 +16,19 @@ public class GameManager : RealTimeMultiplayerListener
     const int MAX_ANAGRAMS_VS = 15;
 
     // message types
-    const int MESSAGE_SCORE_UPDATE = 0;
-    const int MESSAGE_INITIAL_ANAGRAM = 1;
-    const int MESSAGE_ANAGRAM = 2;
+    public const int MESSAGE_SCORE_UPDATE = 0;
+    public const int MESSAGE_INITIAL_ANAGRAM = 1;
+    public const int MESSAGE_ANAGRAM = 2;
+    public const int MESSAGE_OPPONENT_READY = 3;
 
     // categories; used for title on game screen
     const string CATEGORY_CAPITAL_CITIES = "Capital Cities";
 
     // category file names
     const string FILE_CAPITAL_CITIES = "CapitalCities";
+
+    // game types
+    public const string GAME_TYPE_VS = "VS";
 
     static GameManager sInstance = null;
 
@@ -58,15 +62,23 @@ public class GameManager : RealTimeMultiplayerListener
     private CategoryContainer mCategoryContainer;
 
     // the chosen category for the game
-    private string mChosenCategory;
+    private string mCategory;
+
+    // the chosen gametype for the game
+    private string mGameType;
 
     // the current anagram being solved
     private Anagram mCurrentAnagram;
 
+    // has your opponent clicked ready
+    private bool mOpponentReady = false;
+
     public GameManager()
     {
         // set the chosen category
-        mChosenCategory = CATEGORY_CAPITAL_CITIES;
+        mCategory = CATEGORY_CAPITAL_CITIES;
+
+        mGameType = GAME_TYPE_VS;
     }
 
     // send message to opponent
@@ -180,6 +192,10 @@ public class GameManager : RealTimeMultiplayerListener
                 mCurrentAnagram = Anagram.FromByteArray(anagramInBytes);
                 mGameState = GameState.Playing;
                 break;
+
+            case MESSAGE_OPPONENT_READY:
+                mOpponentReady = true;
+                break;
         }
     }
 
@@ -229,11 +245,6 @@ public class GameManager : RealTimeMultiplayerListener
         {
             GetNextAnagram();
         }
-    }
-
-    public void SendScoreUpdate()
-    {
-        SendMessage(MESSAGE_SCORE_UPDATE);
     }
 
     public static void CreateQuickGame()
@@ -363,11 +374,11 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    public string ChosenCatgeory
+    public string Catgeory
     {
         get
         {
-            return mChosenCategory;
+            return mCategory;
         }
     }
 
@@ -393,5 +404,26 @@ public class GameManager : RealTimeMultiplayerListener
         {
             return mAnagramCount;
         }
+    }
+
+    public bool OpponentReady
+    {
+        get
+        {
+            return mOpponentReady;
+        }
+    }
+
+    public string GameType
+    {
+        get
+        {
+            return mGameType;
+        }
+    }
+
+    public void IncrementAnagramCount()
+    {
+        mAnagramCount++;
     }
 }
