@@ -25,7 +25,7 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
     public GameObject dialogPanel;
     public GameObject gameOverDialog;
     public GameObject opponentDisconnectedDialog;
-    private GridLayoutGroup anagramGrid;
+    private HorizontalLayoutGroup anagramGrid;
     public GameObject shuffleLifeBubble;
     public GameObject hintLifeBubble;
     public GameObject revealLifeBubble;
@@ -64,7 +64,7 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
         UpdateAnagramCountText();
 
         // get grid layouts from panels
-        anagramGrid = anagramPanel.GetComponent<GridLayoutGroup>();
+        anagramGrid = anagramPanel.GetComponent<HorizontalLayoutGroup>();
 
         // attempt to get the first anagram
         mCurrentAnagram = GameManager.Instance.CurrentAnagram;

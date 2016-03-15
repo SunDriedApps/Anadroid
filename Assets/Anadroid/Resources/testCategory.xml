@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AnagramCategories>
+  <Anagrams>
+    <Anagram>
+      <solution>LONGANAGRAMS</solution>
+      <hint>Super awesome hint</hint>
+      
+    </Anagram>
+    
+  </Anagrams>
+  
+</AnagramCategories>
