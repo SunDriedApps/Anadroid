@@ -6,8 +6,6 @@ using System;
 
 public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
-    const string MESSAGE_WINNER = "YOU WIN";
-    const string MESSAGE_LOSER = "YOU LOSE";
     const string GAME_OBJECT_LETTER_GAP = "LetterGap";
     const string GAME_OBJECT_TIMER_BAR = "TimerBar";
     const string GAME_OBJECT_READY_BUTTON = "ReadyUpButton";
@@ -37,9 +35,9 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     public Text hintText;
     public GameObject anagramPanel;
     public GameObject dialogPanel;
+    public GameObject opponentDisconnectedDialog;
     public GameObject preGameDialog;
     public GameObject postGameDialog;
-    public GameObject opponentDisconnectedDialog;
     private HorizontalLayoutGroup anagramGrid;
     public GameObject shuffleLifeBubble;
     public GameObject hintLifeBubble;
@@ -68,59 +66,30 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
     public void Start()
     {
-
         // disable standby on android device
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
 
         // get timer image
         timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
 
-        mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
-
-        UpdateAnagramCountText();
-
         // get grid layouts from panels
         anagramGrid = anagramPanel.GetComponent<HorizontalLayoutGroup>();
 
-        // attempt to get the first anagram
-        mCurrentAnagram = GameManager.Instance.CurrentAnagram;
+        mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
+
+        // show pre game dialog
+        dialogPanel.SetActive(true);
+        preGameDialog.SetActive(true);
 
         // set pre game dialog information
         reusableText = GameObject.Find(GAME_OBJECT_PRE_GAME_CATEGORY).GetComponent<Text>();
-        reusableText.text = GameManager.Instance.Catgeory;
+        reusableText.text = GameManager.Instance.Category;
 
         reusableText = GameObject.Find(GAME_OBJECT_GAME_TYPE).GetComponent<Text>();
         reusableText.text = GameManager.Instance.GameType;
 
         reusableText = GameObject.Find(GAME_OBJECT_PRE_GAME_OBJECTIVE).GetComponent<Text>();
         reusableText.text = GetGameObjective();
-    }
-
-    // returns the game result in a string
-    private string GetGameResult()
-    {
-        int score = GameManager.Instance.Score;
-        int opponentScore = GameManager.Instance.OpponentScore;
-
-        if (score > opponentScore)
-        {
-            return GAME_RESULT_WIN;
-        }
-        else if(opponentScore > score)
-        {
-            return GAME_RESULT_LOSS;
-        }
-        else
-        {
-            return GAME_RESULT_DRAW;
-        }
-    }
-
-    // returns the final score as a string
-    private string GetFinalScore()
-    {
-        return GameManager.Instance.Score.ToString() + " - " +
-            GameManager.Instance.OpponentScore;
     }
 
     public void Update()
@@ -178,7 +147,7 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
             return;
         }
 
-        // both players are ready so get the first anagram
+        // if pre game dialog is showing and both players are ready, get the first anagram
         else if (GameManager.Instance.State == GameManager.GameState.PreGame)
         {
 
@@ -204,11 +173,11 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
         {
             Debug.Log("Time up");
             mTimeUp = true;
-            GameManager.Instance.IncrementAnagramCount();
             GameManager.Instance.GetNextAnagram();
         }
 
-        if(GameManager.Instance.State == GameManager.GameState.Playing)
+        // if we're playing update the timer
+        else if (GameManager.Instance.State == GameManager.GameState.Playing)
         {
             UpdateTimer();
         }
@@ -242,7 +211,8 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
             ResetTimer();
 
-            // update anagram count text
+            GameManager.Instance.IncrementAnagramCount();
+
             UpdateAnagramCountText();
 
             if(mTimeUp)
@@ -253,6 +223,33 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
         // update opponent score
         opponentScore.text = GameManager.Instance.OpponentScore.ToString();
+    }
+
+    // returns the game result in a string
+    private string GetGameResult()
+    {
+        int score = GameManager.Instance.Score;
+        int opponentScore = GameManager.Instance.OpponentScore;
+
+        if (score > opponentScore)
+        {
+            return GAME_RESULT_WIN;
+        }
+        else if (opponentScore > score)
+        {
+            return GAME_RESULT_LOSS;
+        }
+        else
+        {
+            return GAME_RESULT_DRAW;
+        }
+    }
+
+    // returns the final score as a string
+    private string GetFinalScore()
+    {
+        return GameManager.Instance.Score.ToString() + " - " +
+            GameManager.Instance.OpponentScore;
     }
 
     // return a string describing the game type objective
@@ -381,9 +378,6 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
             // increment score
             GameManager.Instance.IncrementScore();
-
-            // update anagram count
-            GameManager.Instance.IncrementAnagramCount();
 
             // send update to opponent
             GameManager.Instance.SendMessage(GameManager.MESSAGE_SCORE_UPDATE);

@@ -179,10 +179,7 @@ public class GameManager : RealTimeMultiplayerListener
                     return;
                 }
 
-                IncrementAnagramCount();
-
                 GetNextAnagram();
-
                 break;
 
             case MESSAGE_INITIAL_ANAGRAM:
@@ -378,7 +375,7 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    public string Catgeory
+    public string Category
     {
         get
         {

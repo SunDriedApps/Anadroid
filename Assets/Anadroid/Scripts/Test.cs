@@ -49,8 +49,6 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
 
         anagramGrid = anagramPanel.GetComponent<HorizontalLayoutGroup>();
 
-        anagramGrid2 = anagramPanel2.GetComponent<HorizontalLayoutGroup>();
-        
         mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
 
         timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
