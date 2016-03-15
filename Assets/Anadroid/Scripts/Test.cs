@@ -8,6 +8,7 @@ using System;
 public class Test : MonoBehaviour, LetterOnEndDrag {
     const string PREFAB_ANAGRAM_LETTER = "Letter";
     const string FILE_CAPITAL_CITIES = "CapitalCities";
+    const string FILE_TEST_CATEGORY = "testCategory";
     const string LETTER_GAP_NAME = "LetterGap";
     const string GAME_OBJECT_TIMER_BAR = "TimerBar";
     const string GAME_OBJECT_READY_BUTTON = "ReadyUpButton";
@@ -21,13 +22,16 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
 
     public Text hintText;
     public GameObject anagramPanel;
+    public GameObject anagramPanel2;
     public GameObject hintLifeBubble;
     public GameObject shuffleLifeBubble;
     public GameObject timeContainer;
     private Image timerBar;
 
-    private GridLayoutGroup anagramGrid;
+    private HorizontalLayoutGroup anagramGrid;
 
+    private HorizontalLayoutGroup anagramGrid2;
+    
     private Text letterText;
 
     private CategoryContainer mCategoryContainer;
@@ -43,8 +47,10 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
     {
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
 
-        anagramGrid = anagramPanel.GetComponent<GridLayoutGroup>();
+        anagramGrid = anagramPanel.GetComponent<HorizontalLayoutGroup>();
 
+        anagramGrid2 = anagramPanel2.GetComponent<HorizontalLayoutGroup>();
+        
         mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
 
         timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
@@ -152,15 +158,26 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
 
             letter.GetComponent<Draggable>().SetOnEndDrag(this);
 
-            // add letter to the anagram panel
-            AddLetterToGrid(letter);
+            // checks for word length exceeding panel max, if less add to first
+            if (i < mCurrentAnagram.Length)
+            {
+                // add letter to the anagram panel
+                AddLetterToGrid(letter,anagramGrid);
+            }
+
+            // if index greateer than first panel add to second panel
+            else
+            {
+                AddLetterToGrid(letter, anagramGrid2);
+            }
+
         }
     }
 
     // add letter to anagram grid
-    private void AddLetterToGrid(GameObject letter)
+    private void AddLetterToGrid(GameObject letter, HorizontalLayoutGroup nonEmptyPanel)
     {
-        letter.transform.SetParent(anagramGrid.transform, false);
+        letter.transform.SetParent(nonEmptyPanel.transform, false);
         letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
         letter.transform.localPosition = Vector3.zero;
     }

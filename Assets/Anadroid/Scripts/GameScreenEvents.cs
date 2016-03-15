@@ -6,6 +6,8 @@ using System;
 
 public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
+    const string MESSAGE_WINNER = "YOU WIN";
+    const string MESSAGE_LOSER = "YOU LOSE";
     const string GAME_OBJECT_LETTER_GAP = "LetterGap";
     const string GAME_OBJECT_TIMER_BAR = "TimerBar";
     const string GAME_OBJECT_READY_BUTTON = "ReadyUpButton";
@@ -35,10 +37,10 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     public Text hintText;
     public GameObject anagramPanel;
     public GameObject dialogPanel;
-    public GameObject opponentDisconnectedDialog;
     public GameObject preGameDialog;
     public GameObject postGameDialog;
-    private GridLayoutGroup anagramGrid;
+    public GameObject opponentDisconnectedDialog;
+    private HorizontalLayoutGroup anagramGrid;
     public GameObject shuffleLifeBubble;
     public GameObject hintLifeBubble;
     public GameObject revealLifeBubble;
@@ -73,14 +75,15 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
         // get timer image
         timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
 
-        // get grid layouts from panels
-        anagramGrid = anagramPanel.GetComponent<GridLayoutGroup>();
-
         mTimeRemaining = TOTAL_TIME_TO_SOLVE_ANAGRAM;
 
-        // show pre game dialog
-        dialogPanel.SetActive(true);
-        preGameDialog.SetActive(true);
+        UpdateAnagramCountText();
+
+        // get grid layouts from panels
+        anagramGrid = anagramPanel.GetComponent<HorizontalLayoutGroup>();
+
+        // attempt to get the first anagram
+        mCurrentAnagram = GameManager.Instance.CurrentAnagram;
 
         // set pre game dialog information
         reusableText = GameObject.Find(GAME_OBJECT_PRE_GAME_CATEGORY).GetComponent<Text>();

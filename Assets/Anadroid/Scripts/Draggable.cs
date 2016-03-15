@@ -6,7 +6,8 @@ using System;
 
 public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    Transform originalParent = null;
+    public Transform originalParent = null;
+    public Transform letterGapParent = null;
 
     GameObject letterGap = null;
 
@@ -21,12 +22,13 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         LayoutElement le = letterGap.AddComponent<LayoutElement>();
         le.preferredWidth = this.GetComponent<LayoutElement>().preferredWidth;
         le.preferredHeight = this.GetComponent<LayoutElement>().preferredHeight;
-        le.flexibleWidth = this.GetComponent<LayoutElement>().flexibleWidth;
-        le.flexibleHeight = this.GetComponent<LayoutElement>().flexibleHeight;
+        le.flexibleWidth = 0;
+        le.flexibleHeight = 0;
 
         letterGap.transform.SetSiblingIndex(this.transform.GetSiblingIndex());
 
         originalParent = this.transform.parent;
+        letterGapParent = originalParent;
         this.transform.SetParent(this.transform.parent.parent);
 
         GetComponent<CanvasGroup>().blocksRaycasts = false; 
@@ -36,11 +38,14 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
     {
         this.transform.position = eventData.position;
 
-        int newSiblingIndex =  this.transform.GetSiblingIndex();
+        if (letterGap.transform.parent != letterGapParent)
+            letterGap.transform.SetParent(letterGapParent);
 
-        for (int i = 0; i < originalParent.childCount; i++)
+        int newSiblingIndex = letterGapParent.childCount;
+
+        for (int i = 0; i < letterGapParent.childCount; i++)
         {
-            if (this.transform.position.x  < originalParent.GetChild(i).position.x)
+            if (this.transform.position.x  < letterGapParent.GetChild(i).position.x)
             {
 
 
@@ -57,6 +62,8 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         letterGap.transform.SetSiblingIndex(newSiblingIndex); 
     }
 
+    
+
     public void SetOnEndDrag(LetterOnEndDrag p)
     {
         mLetterOnEndDrag = p;
@@ -71,7 +78,7 @@ public class Draggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
 
         GetComponent<CanvasGroup>().blocksRaycasts = true;
 
-        Destroy(letterGap);
+        Destroy(letterGap); 
 
         mLetterOnEndDrag.OnEndDrag();
     }
