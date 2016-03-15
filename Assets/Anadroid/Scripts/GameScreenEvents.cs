@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System;
 
-public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
+public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
 
     const string GAME_OBJECT_LETTER_GAP = "LetterGap";
     const string GAME_OBJECT_TIMER_BAR = "TimerBar";
@@ -14,12 +14,17 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
     const string GAME_OBJECT_PRE_GAME_CATEGORY = "GameCategoryText";
     const string GAME_OBJECT_GAME_TYPE = "GameTypeContentText";
     const string GAME_OBJECT_PRE_GAME_OBJECTIVE = "ObjectiveContentText";
+    const string GAME_OBJECT_GAME_RESULT_TEXT = "GameResultText";
+    const string GAME_OBJECT_FINAL_SCORE_TEXT = "FinalScoreText";
     const string PREFAB_ANAGRAM_LETTER = "Letter";
     const string READY_TEXT = "READY";
     const string WAITING_FOR_OPPONENT_TEXT = "Waiting for opponent";
-    const string GAME_OBJECTIVE_VS = "Gain a point for every anagram solved";
+    const string GAME_OBJECTIVE_VS = "Score more points that your opponent";
+    const string GAME_RESULT_WIN = "You Win";
+    const string GAME_RESULT_LOSS = "You Lose";
+    const string GAME_RESULT_DRAW = "Draw";
     const int MAX_NUM_OF_HINTS = 2;
-    const float TOTAL_TIME_TO_SOLVE_ANAGRAM = 40.0f;
+    const float TOTAL_TIME_TO_SOLVE_ANAGRAM = 25.0f;
 
     // game objects and components
     public Text score;
@@ -50,14 +55,13 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
     // time remaining to solve the current anagram
     private float mTimeRemaining;
 
+    private bool mTimeUp = false;
+
     // have we clicked ready
     private bool mReady = false;
 
-    // has the game started?
-    private bool mGameStarted = false;
-
-    // color for disabled or pressed text components
-    Color mWhiteDisabled;
+    // used whenever we need to reference a text component from a game object
+    private Text reusableText;
 
 
     public void Start()
@@ -78,30 +82,42 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
         dialogPanel.SetActive(true);
         preGameDialog.SetActive(true);
 
-        // set pre game information
-        GameObject.Find(GAME_OBJECT_PRE_GAME_CATEGORY)
-            .GetComponent<Text>().text = GameManager.Instance.Catgeory;
+        // set pre game dialog information
+        reusableText = GameObject.Find(GAME_OBJECT_PRE_GAME_CATEGORY).GetComponent<Text>();
+        reusableText.text = GameManager.Instance.Catgeory;
 
-        GameObject.Find(GAME_OBJECT_GAME_TYPE)
-            .GetComponent<Text>().text = GameManager.Instance.GameType;
+        reusableText = GameObject.Find(GAME_OBJECT_GAME_TYPE).GetComponent<Text>();
+        reusableText.text = GameManager.Instance.GameType;
 
-        GameObject.Find(GAME_OBJECT_PRE_GAME_OBJECTIVE)
-            .GetComponent<Text>().text = GetGameObjective();
-
-        mWhiteDisabled = Color.white;
-        mWhiteDisabled.a = 0.4f;
+        reusableText = GameObject.Find(GAME_OBJECT_PRE_GAME_OBJECTIVE).GetComponent<Text>();
+        reusableText.text = GetGameObjective();
     }
 
-    // return a string describing the game type objective
-    private string GetGameObjective()
+    // returns the game result in a string
+    private string GetGameResult()
     {
-        switch(GameManager.Instance.GameType)
+        int score = GameManager.Instance.Score;
+        int opponentScore = GameManager.Instance.OpponentScore;
+
+        if (score > opponentScore)
         {
-            case GameManager.GAME_TYPE_VS:
-                return GAME_OBJECTIVE_VS;
-            default:
-                return null;
+            return GAME_RESULT_WIN;
         }
+        else if(opponentScore > score)
+        {
+            return GAME_RESULT_LOSS;
+        }
+        else
+        {
+            return GAME_RESULT_DRAW;
+        }
+    }
+
+    // returns the final score as a string
+    private string GetFinalScore()
+    {
+        return GameManager.Instance.Score.ToString() + " - " +
+            GameManager.Instance.OpponentScore;
     }
 
     public void Update()
@@ -115,15 +131,41 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
         switch(GameManager.Instance.State)
         {
             case GameManager.GameState.Finished:
+
+                // return if post game dialog already showing
+                if(dialogPanel.activeSelf)
+                {
+                    return;
+                }
+
+                // disable timer
                 timerContainer.SetActive(false);
-                //gameOverDialog.SetActive(true);
-                break;
+
+                // show post game dialog
+                dialogPanel.SetActive(true);
+                postGameDialog.SetActive(true);
+
+                // set game result text component
+                reusableText = GameObject.Find(GAME_OBJECT_GAME_RESULT_TEXT).GetComponent<Text>();
+                reusableText.text = GetGameResult();
+
+                // set final score text
+                reusableText = GameObject.Find(GAME_OBJECT_FINAL_SCORE_TEXT).GetComponent<Text>();
+                reusableText.text = GetFinalScore();
+                return;
 
             case GameManager.GameState.Aborted:
+                
+                // return if post game dialog already showing
+                if (dialogPanel.activeSelf)
+                {
+                    return;
+                }
+
                 timerContainer.SetActive(false);
                 dialogPanel.SetActive(true);
                 opponentDisconnectedDialog.SetActive(true);
-                break;
+                return;
         }
 
         // if either player isn't ready to play return
@@ -132,8 +174,9 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
             Debug.Log("Players not ready");
             return;
         }
+
         // both players are ready so get the first anagram
-        else if (!mGameStarted)
+        else if (GameManager.Instance.State == GameManager.GameState.PreGame)
         {
 
             // attempt to get the first anagram
@@ -144,23 +187,25 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
 
             UpdateAnagramCountText();
 
-            mGameStarted = true;
-
             // hide pre game dialog
             dialogPanel.SetActive(false);
             preGameDialog.SetActive(false);
+
+            GameManager.Instance.SetState(GameManager.GameState.Playing);
 
             Debug.Log("Game started");
         }
 
         // get a new anagram if we've ran out of time
-        if (mTimeRemaining <= 0)
+        if (mTimeRemaining <= 0 && !mTimeUp)
         {
+            Debug.Log("Time up");
+            mTimeUp = true;
             GameManager.Instance.IncrementAnagramCount();
             GameManager.Instance.GetNextAnagram();
         }
 
-        if(mGameStarted)
+        if(GameManager.Instance.State == GameManager.GameState.Playing)
         {
             UpdateTimer();
         }
@@ -196,10 +241,27 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
 
             // update anagram count text
             UpdateAnagramCountText();
+
+            if(mTimeUp)
+            {
+                mTimeUp = false;
+            }
         }
 
         // update opponent score
         opponentScore.text = GameManager.Instance.OpponentScore.ToString();
+    }
+
+    // return a string describing the game type objective
+    private string GetGameObjective()
+    {
+        switch (GameManager.Instance.GameType)
+        {
+            case GameManager.GAME_TYPE_VS:
+                return GAME_OBJECTIVE_VS;
+            default:
+                return null;
+        }
     }
 
     // decrement time and update text
@@ -317,6 +379,9 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
             // increment score
             GameManager.Instance.IncrementScore();
 
+            // update anagram count
+            GameManager.Instance.IncrementAnagramCount();
+
             // send update to opponent
             GameManager.Instance.SendMessage(GameManager.MESSAGE_SCORE_UPDATE);
 
@@ -404,16 +469,18 @@ public class GameScreenEvents : MonoBehaviour,  LetterOnEndDrag {
         GameManager.Instance.SendMessage(GameManager.MESSAGE_OPPONENT_READY);
 
         // update ready button text
-        GameObject.Find(GAME_OBJECT_READY_UP_BUTTON_TEXT)
-            .GetComponent<Text>().text = READY_TEXT;
+        reusableText = GameObject.Find(GAME_OBJECT_READY_UP_BUTTON_TEXT).GetComponent<Text>();
+        reusableText.text = READY_TEXT;
 
         // disable button
         GameObject readyButton = GameObject.Find(GAME_OBJECT_READY_BUTTON);
         readyButton.GetComponent<Button>().interactable = false;
-        readyButton.GetComponentInChildren<Text>().color = mWhiteDisabled;
+        Color transparentWhite = Color.white;
+        transparentWhite.a = 0.4f;
+        readyButton.GetComponentInChildren<Text>().color = transparentWhite;
 
         // update message
-        GameObject.Find(GAME_OBJECT_PRE_GAME_MESSAGE)
-            .GetComponent<Text>().text = WAITING_FOR_OPPONENT_TEXT;
+        reusableText = GameObject.Find(GAME_OBJECT_PRE_GAME_MESSAGE).GetComponent<Text>();
+        reusableText.text = WAITING_FOR_OPPONENT_TEXT;
     }
 }

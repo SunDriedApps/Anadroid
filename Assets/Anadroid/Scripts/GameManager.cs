@@ -13,7 +13,7 @@ public class GameManager : RealTimeMultiplayerListener
     const int GAME_VARIENT_VS = 0;
     const int MIN_OPPONENTS = 1;
     const int MAX_OPPONENTS = 1;
-    const int MAX_ANAGRAMS_VS = 15;
+    const int MAX_ANAGRAMS_VS = 3;
 
     // message types
     public const int MESSAGE_SCORE_UPDATE = 0;
@@ -35,6 +35,7 @@ public class GameManager : RealTimeMultiplayerListener
     public enum GameState
     {
         SettingUp,
+        PreGame,
         Playing,
         Finished,
         SetupFailed,
@@ -142,9 +143,9 @@ public class GameManager : RealTimeMultiplayerListener
 
                 // send anagram object to opponent
                 SendAnagram(MESSAGE_INITIAL_ANAGRAM, mCurrentAnagram);
-
-                mGameState = GameState.Playing;
             }
+
+            mGameState = GameState.PreGame;
 
             Debug.Log("Room successfully connected.");
         }
@@ -171,26 +172,25 @@ public class GameManager : RealTimeMultiplayerListener
         {
             case MESSAGE_SCORE_UPDATE:
                 mOpponentScore++;
-                mAnagramCount++;
 
-                if(mAnagramCount == MAX_ANAGRAMS_VS)
+                if (mAnagramCount == MAX_ANAGRAMS_VS + 1)
                 {
                     mGameState = GameState.Finished;
+                    return;
                 }
-                else if (mWeAreHost)
-                {
-                    GetNextAnagram();
-                }
+
+                IncrementAnagramCount();
+
+                GetNextAnagram();
+
                 break;
 
             case MESSAGE_INITIAL_ANAGRAM:
                 mCurrentAnagram = Anagram.FromByteArray(anagramInBytes);
-                mGameState = GameState.Playing;
                 break;
 
             case MESSAGE_ANAGRAM:
                 mCurrentAnagram = Anagram.FromByteArray(anagramInBytes);
-                mGameState = GameState.Playing;
                 break;
 
             case MESSAGE_OPPONENT_READY:
@@ -216,34 +216,33 @@ public class GameManager : RealTimeMultiplayerListener
             return;
         }
 
-        // check if we've ran out of anagrams
-        if(mCategoryContainer.OutOfAnagrams())
-        {
-            LoadCategory(FILE_CAPITAL_CITIES);
-        }
-
+        // get next anagram
         mCurrentAnagram = mCategoryContainer.GetAnagram();
         mCurrentAnagram.Shuffle();
 
+        // send to opponent
         SendAnagram(MESSAGE_ANAGRAM, mCurrentAnagram);
-
-        mGameState = GameManager.GameState.Playing;
     }
 
     // increment our score and send update to opponent
     public void IncrementScore()
     {
         mScore++;
-        mAnagramCount++;
 
-        // is the game over?
-        if (mScore == MAX_ANAGRAMS_VS)
-        {
-            mGameState = GameState.Finished;
-        }
-        else
+        if(mGameState != GameState.Finished)
         {
             GetNextAnagram();
+        }
+    }
+
+    // increment the anagram count and check if we've finished the game
+    public void IncrementAnagramCount()
+    {
+        mAnagramCount++;
+
+        if(mAnagramCount == MAX_ANAGRAMS_VS + 1)
+        {
+            mGameState = GameState.Finished;
         }
     }
 
@@ -334,6 +333,11 @@ public class GameManager : RealTimeMultiplayerListener
         return PlayGamesPlatform.Instance.RealTime.GetParticipant(participantId);
     }
 
+    public void SetState(GameState state)
+    {
+        mGameState = state;
+    }
+
     public GameState State
     {
         get
@@ -420,10 +424,5 @@ public class GameManager : RealTimeMultiplayerListener
         {
             return mGameType;
         }
-    }
-
-    public void IncrementAnagramCount()
-    {
-        mAnagramCount++;
     }
 }

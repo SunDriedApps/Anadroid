@@ -108,7 +108,7 @@ public class MainMenuEvents : MonoBehaviour
                 mProcessed = false;
                 break;
 
-            case GameManager.GameState.Playing:
+            case GameManager.GameState.PreGame:
                 mProcessed = false;
                 NavigationUtils.ShowGameScreen();
                 break;
