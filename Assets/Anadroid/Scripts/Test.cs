@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using System;
+using Random = UnityEngine.Random;
 
 public class Test : MonoBehaviour, LetterOnEndDrag {
     const string PREFAB_ANAGRAM_LETTER = "Letter";
@@ -18,29 +19,33 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
     const string GAME_OBJECT_GAME_TYPE = "GameTypeContentText";
     const string GAME_OBJECT_PRE_GAME_OBJECTIVE = "ObjectiveContentText";
     const int MAX_NUM_OF_HINTS = 1;
-    const float TIME_TO_SOLVE = 20.0f;
+    const float TIME_TO_SOLVE = 100.0f;
 
     public Text hintText;
     public GameObject anagramPanel;
-    public GameObject anagramPanel2;
     public GameObject hintLifeBubble;
     public GameObject shuffleLifeBubble;
-    public GameObject timeContainer;
-    private Image timerBar;
+    public GameObject revealLifeBubble;
+    public Text timerText;
+    public AudioSource correctAudioSource;
+    public AudioSource timeOutAudioSource;
+    public AudioSource timeAlmostUp;
 
     private HorizontalLayoutGroup anagramGrid;
 
-    private HorizontalLayoutGroup anagramGrid2;
-    
     private Text letterText;
 
     private CategoryContainer mCategoryContainer;
 
     private static Anagram mCurrentAnagram;
 
+    private List<GameObject> mLetters = new List<GameObject>();
+
     private int mNumOfUsedHints = 0;
 
     private float mTimeRemaining;
+
+    private GameObject reusableLetterTile;
 
     // Use this for initialization
     void Start ()
@@ -51,17 +56,11 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
 
         mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
 
-        timerBar = GameObject.Find(GAME_OBJECT_TIMER_BAR).GetComponent<Image>();
-
-        Debug.Log(timerBar.name);
-
         UpdateCurrentAnagram();
 
         mTimeRemaining = TIME_TO_SOLVE;
 
         UpdateTime();
-
-        GameObject.Find(GAME_OBJECT_GAME_TYPE).GetComponent<Text>().text = "FFFFFF";
     }
 
     void Update()
@@ -82,12 +81,21 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
         mTimeRemaining -= Time.deltaTime;
 
         // update time display
-        timerBar.fillAmount = mTimeRemaining / TIME_TO_SOLVE;
+        timerText.text = mTimeRemaining.ToString("0");
+
+        // warn player time is almost up
+        if(mTimeRemaining < 9)
+        {
+            Debug.Log("Time almost up");
+            timerText.color = new Color(229f/255f, 65f/255f, 73f/255f);
+        }
     }
 
     private void ResetTime()
     {
         mTimeRemaining = TIME_TO_SOLVE;
+
+        timerText.color = Color.white;
     }
 
     private bool AnagramSolved()
@@ -154,28 +162,18 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
             letterText = letter.GetComponentInChildren<Text>();
             letterText.text = mCurrentAnagram.Shuffled[i].ToString();
 
-            letter.GetComponent<Draggable>().SetOnEndDrag(this);
+            letter.GetComponent<LetterBehaviour>().SetOnEndDrag(this);
 
-            // checks for word length exceeding panel max, if less add to first
-            if (i < mCurrentAnagram.Length)
-            {
-                // add letter to the anagram panel
-                AddLetterToGrid(letter,anagramGrid);
-            }
+            AddLetterToGrid(letter);
 
-            // if index greateer than first panel add to second panel
-            else
-            {
-                AddLetterToGrid(letter, anagramGrid2);
-            }
-
+            mLetters.Add(letter);
         }
     }
 
     // add letter to anagram grid
-    private void AddLetterToGrid(GameObject letter, HorizontalLayoutGroup nonEmptyPanel)
+    private void AddLetterToGrid(GameObject letter)
     {
-        letter.transform.SetParent(nonEmptyPanel.transform, false);
+        letter.transform.SetParent(anagramGrid.transform, false);
         letter.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
         letter.transform.localPosition = Vector3.zero;
     }
@@ -238,5 +236,92 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
         {
             Debug.Log("Not solved");
         }
+    }
+
+    // returns the first letter that matches the given string
+    private GameObject GetLetterTile(char c)
+    {
+        foreach(GameObject letter in mLetters)
+        {
+            if (letter.GetComponentInChildren<Text>().text.Equals(c.ToString()))
+            {
+                return letter;
+            }
+        }
+
+        return null;
+    }
+
+    // reveal 2 letters from the solution
+    public void OnRevealLifeBubbleClick()
+    {
+        // get random index for first letter
+        int randomLetterIndex1;
+        randomLetterIndex1 = Random.Range(0, mCurrentAnagram.Length);
+
+        // get random index for second letter
+        int randomLetterIndex2 = Random.Range(0, mCurrentAnagram.Length);
+        while(randomLetterIndex1 == randomLetterIndex2)
+        {
+            randomLetterIndex2 = Random.Range(0, mCurrentAnagram.Length);
+        }
+
+        // use random indexes to get two chars from solution
+        char solutionLetter1 = mCurrentAnagram.Solution[randomLetterIndex1];
+        char solutionLetter2 = mCurrentAnagram.Solution[randomLetterIndex2];
+
+        RevealLetterTile(solutionLetter1, randomLetterIndex1);
+        RevealLetterTile(solutionLetter2, randomLetterIndex2); 
+    }
+
+    // find a letter tile that matches the solution letter and
+    // swap it for the tile at the given index
+    private void RevealLetterTile(char solutionLetter, int index)
+    {
+        GameObject solutionLetterTile = GetLetterTile(solutionLetter);
+        GameObject shuffledLetterTile = anagramGrid.transform.GetChild(index).gameObject;
+        if (!solutionLetterTile.Equals(shuffledLetterTile))
+        {
+            SwapLetterTile(solutionLetterTile, shuffledLetterTile);
+        }
+
+        SetLetterTileComponentsLocked(index);
+    }
+    
+    
+    // used to hold a reference to all of a letters image components
+    Image[] letterComponents;
+
+    // set letter tile as locked in the draggable script
+    // enable lock image on tile
+    private void SetLetterTileComponentsLocked(int index)
+    {
+        reusableLetterTile = anagramGrid.transform.GetChild(index).gameObject;
+
+        reusableLetterTile.GetComponent<LetterBehaviour>().SetLocked();
+
+        // get reference to all letter components
+        letterComponents = reusableLetterTile.GetComponentsInChildren<Image>();
+
+        // find the lock image and enable it
+        foreach (Image image in letterComponents)
+        {
+            if (image.name.Equals("LockImage"))
+            {
+                image.enabled = true;
+            }
+        }
+    }
+
+    // swap two letter tiles
+    private void SwapLetterTile(GameObject letter1, GameObject letter2)
+    {
+        int letter1Index = letter1.transform.GetSiblingIndex();
+
+        // set letter 2 in letter 1's place
+        letter1.transform.SetSiblingIndex(letter2.transform.GetSiblingIndex());
+
+        // set letter 1 in letter 2's place
+        letter2.transform.SetSiblingIndex(letter1Index);
     }
 }

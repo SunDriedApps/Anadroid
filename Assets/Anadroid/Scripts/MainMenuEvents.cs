@@ -4,18 +4,30 @@ using GooglePlayGames;
 using GooglePlayGames.BasicApi.Multiplayer;
 using GooglePlayGames.BasicApi;
 using UnityEngine.UI;
+using System;
+
+/*
+** A class to handle main menu events. We will attempt to sign the
+** player into Google Play Games once this script is started
+*/
 
 public class MainMenuEvents : MonoBehaviour
 {
     const string SIGN_IN_BUTTON_TEXT = "SIGN IN";
     const string SIGN_OUT_BUTTON_TEXT = "SIGN OUT";
+    const string SOUND_EFFECTS_DISABLED_IMAGE = "SoundEffectsDisabledImage";
+    const string MUSIC_DISABLED_IMAGE = "MusicDisabledImage";
 
     public GameObject dialogPanel;
     public GameObject signInFailedDialog;
     public GameObject searchingDialog;
     public GameObject invitationDialog;
+    public GameObject musicSideMenuButton;
+    public GameObject soundEffectsSideMenuButton;
     public Text invatationDialogPlayerName;
     public Text signInButtonText;
+    public AudioSource menuButtonAudioSource;
+    public AudioSource musicAudioSource;
 
     // To avoid processing events multiple times.
     private bool mProcessed = false;
@@ -24,7 +36,42 @@ public class MainMenuEvents : MonoBehaviour
     private System.Action<bool> mAuthCallback;
 
     // are we currently signed into the play games servers?
-    private bool mSignedIn = false;
+    private static bool sSignedIn = false;
+
+    private bool mMusicEnabled;
+
+    private bool mSoundEffectsEnabled;
+
+    private static bool sMusicStarted = false;
+
+
+    void Awake()
+    {
+        // load audio preferences
+        int pref = PlayerPrefs.GetInt(GameManager.MUSIC_ENABLED_KEY, 1);
+        mMusicEnabled = Convert.ToBoolean(pref);
+        GameObject.Find(MUSIC_DISABLED_IMAGE).GetComponent<Image>().enabled = !mMusicEnabled;
+
+        pref = PlayerPrefs.GetInt(GameManager.SOUND_EFFECTS_ENABLED_KEY, 1);
+        mSoundEffectsEnabled = Convert.ToBoolean(pref);
+        GameObject.Find(SOUND_EFFECTS_DISABLED_IMAGE).GetComponent<Image>().enabled = !mSoundEffectsEnabled;
+
+        Debug.Log("Music started = " + sMusicStarted);
+
+        DontDestroyOnLoad(musicAudioSource);
+
+        if (!sMusicStarted)
+        {
+            musicAudioSource.Play();
+
+            if (!mMusicEnabled)
+            {
+                musicAudioSource.mute = true;
+            }
+
+            sMusicStarted = true;
+        }
+    }
 
     void Start()
     {
@@ -35,6 +82,13 @@ public class MainMenuEvents : MonoBehaviour
             GameManager.Instance.CleanUp();
         }
 
+        if(sSignedIn)
+        {
+            signInButtonText.text = SIGN_OUT_BUTTON_TEXT;
+
+            return;
+        }
+
         mAuthCallback = (bool success) =>
         {
             Debug.Log("In Auth callback, success = " + success);
@@ -42,7 +96,7 @@ public class MainMenuEvents : MonoBehaviour
             if (success)
             {
                 signInButtonText.text = SIGN_OUT_BUTTON_TEXT;
-                mSignedIn = true;
+                sSignedIn = true;
                 Debug.Log("Auth successful");
             }
 
@@ -68,7 +122,7 @@ public class MainMenuEvents : MonoBehaviour
     //Starts the signin process.
     void Authorize(bool silent)
     {
-        if(mSignedIn == true)
+        if(sSignedIn == true)
         {
             Debug.Log("Already signed in!");
             return;
@@ -81,7 +135,6 @@ public class MainMenuEvents : MonoBehaviour
     // called once per frame
     void Update()
     {
-
         UpdateInvitation();
 
         if (GameManager.Instance == null)
@@ -181,7 +234,7 @@ public class MainMenuEvents : MonoBehaviour
             GameManager.Instance.CleanUp();
         }
 
-        if(mSignedIn)
+        if(sSignedIn)
         {
             Debug.Log("Signing out...");
             if (PlayGamesPlatform.Instance != null)
@@ -194,7 +247,7 @@ public class MainMenuEvents : MonoBehaviour
             {
                 Debug.Log("PG Instance is null!");
             }
-            mSignedIn = false;
+            sSignedIn = false;
         }
         else
         {
@@ -242,5 +295,29 @@ public class MainMenuEvents : MonoBehaviour
         invitationDialog.SetActive(false);
         dialogPanel.SetActive(false);
         Debug.Log("Invitation declined");
+    }
+
+    public void OnMusicClick()
+    {
+        mMusicEnabled = !mMusicEnabled;
+
+        // store preference
+        PlayerPrefs.SetInt(GameManager.MUSIC_ENABLED_KEY, Convert.ToInt32(mMusicEnabled));
+
+        musicAudioSource.mute = !mMusicEnabled;
+
+        GameObject.Find(MUSIC_DISABLED_IMAGE).GetComponent<Image>().enabled = !mMusicEnabled;
+    }
+
+    public void OnSoundEffectsClick()
+    {
+        mSoundEffectsEnabled = !mSoundEffectsEnabled;
+
+        // store preference
+        PlayerPrefs.SetInt(GameManager.SOUND_EFFECTS_ENABLED_KEY, Convert.ToInt32(mSoundEffectsEnabled));
+
+        menuButtonAudioSource.enabled = mSoundEffectsEnabled;
+
+        GameObject.Find(SOUND_EFFECTS_DISABLED_IMAGE).GetComponent<Image>().enabled = !mSoundEffectsEnabled;
     }
 }

@@ -6,6 +6,14 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System;
 
+/*
+** A class that represents an Anagram. An anagram will contain a solution, 
+** hint and a shuffled solution. This class is serializable as each anagram 
+** needs to be instantiated from an Anagram xml element. Each anagram category
+** is stored in one xml file and each one of these files is made up of multiple
+** Anagram elements
+*/
+
 [Serializable()]
 public class Anagram {
 
@@ -15,7 +23,8 @@ public class Anagram {
     [XmlElement("hint")]
     public string mHint; // a hint used to solve the anagram
 
-    // the shuffled solution
+    // the shuffled solution which the host will send across to their
+    // opponent so that each player will have the same anagram to solve
     private string mShuffled;
 
     public Anagram() {}
@@ -25,13 +34,6 @@ public class Anagram {
     public void Shuffle()
     {
         char[] shuffled = mSolution.ToCharArray();
-        Debug.Log(mSolution);
-        Debug.Log(shuffled.Length);
-        for(int i = 0; i < shuffled.Length; i++)
-        {
-            Debug.Log(i + " " + shuffled[i]);
-        }
-
         int n = shuffled.Length;
         while (n > 1)
         {
@@ -43,8 +45,13 @@ public class Anagram {
         }
 
         mShuffled = new string(shuffled);
-    }
 
+        // re-shuffle if the first call failed to shuffle correctly
+        if(mShuffled.Equals(mSolution))
+        {
+            Shuffle();
+        }
+    }
 
     public bool Equals(Anagram anagram)
     {

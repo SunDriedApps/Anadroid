@@ -2,6 +2,10 @@
 using System.Collections;
 using UnityEngine.SceneManagement;
 
+/*
+** A helper class to change scenes in the game
+*/
+
 public class NavigationUtils : MonoBehaviour {
 
     public static void ShowMainMenu()
