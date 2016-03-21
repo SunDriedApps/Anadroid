@@ -27,6 +27,9 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     // a callback interface used in GameScreenEvents
     private LetterOnEndDrag mLetterOnEndDrag;
 
+    // used to keep track of last x position of drag
+    // which will help determine if we're moving left 
+    // or right
     private float mLastPosX;
 
    
@@ -60,20 +63,20 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         newLetterGapIndex = letterGap.transform.GetSiblingIndex();
 
         // moving left
-        if (transform.position.x < mLastPosX + LETTER_TILE_DRAG_OFFSET)
+        if (transform.position.x < mLastPosX)
         {
             Debug.Log("Moving left");
             for (int i = 0; i < anagramPanelTransform.childCount; i++)
             {
-                // is the letter tile being dragged to the left of the child at position i
+                // swap tiles
                 if ((transform.position.x - LETTER_TILE_WIDTH / 4) < anagramPanelTransform.GetChild(i).position.x)
                 {
-                    // if the letter tile is locked return 
+                    // if the letter tile is locked skip this iteration
                     if (anagramPanelTransform.GetChild(i).name == "Letter(Clone)")
                     {
                         if (anagramPanelTransform.GetChild(i).GetComponent<LetterBehaviour>().Locked)
                         {
-                            return;
+                            continue;
                         }
                     }
 
@@ -89,26 +92,25 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
         }
         // moving right
-        else if((transform.position.x) > (mLastPosX - LETTER_TILE_DRAG_OFFSET))
+        else if(transform.position.x > mLastPosX)
         {
             Debug.Log("Moving right");
 
-            for (int i = anagramPanelTransform.childCount - 1; i >= 0; i--)
+            for (int i = letterGap.transform.GetSiblingIndex() + 1; i < anagramPanelTransform.childCount; i++)
             {
-                // is the letter tile being dragged to the left of the child at position i
+                // check are we far enough to the right to 
                 if ((transform.position.x + LETTER_TILE_WIDTH / 4) > anagramPanelTransform.GetChild(i).position.x)
                 {
-                    // if the letter tile is locked return 
+                    // if the letter tile is locked skip this iteration
                     if (anagramPanelTransform.GetChild(i).name == "Letter(Clone)")
                     {
                         if (anagramPanelTransform.GetChild(i).GetComponent<LetterBehaviour>().Locked)
                         {
-                            return;
+                            continue;
                         }
                     }
 
                     newLetterGapIndex = i;
-
 
                     if (letterGap.transform.GetSiblingIndex() > newLetterGapIndex)
                     {
@@ -119,6 +121,11 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             }
         }
 
+        // update last x position
+        mLastPosX = eventData.position.x;
+
+        // swap letter gap with the letter at position pointed to by newLetterGapIndex
+        anagramPanelTransform.GetChild(newLetterGapIndex).SetSiblingIndex(letterGap.transform.GetSiblingIndex());
         letterGap.transform.SetSiblingIndex(newLetterGapIndex);
     }
 
@@ -133,12 +140,10 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             transform.SetSiblingIndex(letterGap.transform.GetSiblingIndex());
 
-            /*
             if (GameManager.Instance.SoundEffectsEnabled)
             {
                 GameObject.Find(GAME_OBJECT_LETTER_POP).GetComponent<AudioSource>().Play();
             }
-            */
         }
 
         GetComponent<CanvasGroup>().blocksRaycasts = true;

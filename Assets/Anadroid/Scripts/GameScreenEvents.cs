@@ -25,7 +25,8 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     const string READY_TEXT = "READY";
     const string WAITING_FOR_OPPONENT_TEXT = "Waiting for opponent";
     const string GAME_OBJECTIVE_VS = "Gain a point for every anagram solved. The player with the most points at the end of the game wins";
-    const int MAX_NUM_OF_HINTS = 2;
+    const int MAX_NUM_OF_HINTS = 3;
+    const int MAX_NUM_OF_REVEALS = 2;
 
     // game objects and components
     public Text category;
@@ -53,8 +54,11 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     // a reference to all letter objects currently on screen
     private List<GameObject> mLetters;
 
-    // the number of hints used in the 
+    // the number of hints used
     private int mNumOfUsedHints = 0;
+
+    // number of reveals used
+    private int mNumOfRevealsUsed = 0;
 
     // only 1 re-shuffle allowed per anagram
     private bool mUsedShuffle = false;
@@ -209,6 +213,11 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
             {
                 mUsedShuffle = false;
                 EnableLifeBubble(shuffleLifeBubble);
+            }
+
+            if(mNumOfRevealsUsed != MAX_NUM_OF_REVEALS)
+            {
+                EnableLifeBubble(revealLifeBubble);
             }
 
             StartCoroutine(AnagramTransition());
@@ -403,23 +412,93 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     // reveal 2 letters from the solution
     public void OnRevealLifeBubbleClick()
     {
-        // calculate random index for letter 1
-        int randomIndexLetter1 = Random.Range(0, mCurrentAnagram.Length);
+        mNumOfRevealsUsed++;
 
-        // activate lock image for letter 1
-        mLetters[randomIndexLetter1].GetComponentInChildren<Image>().gameObject.SetActive(true);
+        // get random index for first letter
+        int randomLetterIndex1;
+        randomLetterIndex1 = Random.Range(0, mCurrentAnagram.Length);
 
-        // calculate random index for letter 2
-        int randomIndexLetter2 = Random.Range(0, mCurrentAnagram.Length);
-
-        // re-calculate if we got the same index as letter one
-        while (randomIndexLetter2 == randomIndexLetter1)
+        // get random index for second letter
+        int randomLetterIndex2 = Random.Range(0, mCurrentAnagram.Length);
+        while (randomLetterIndex1 == randomLetterIndex2)
         {
-            randomIndexLetter2 = Random.Range(0, mCurrentAnagram.Length);
+            randomLetterIndex2 = Random.Range(0, mCurrentAnagram.Length);
         }
 
-        // activate lock image for letter 2
-        mLetters[randomIndexLetter2].GetComponentInChildren<Image>().gameObject.SetActive(true);
+        // use random indexes to get two chars from solution
+        char solutionLetter1 = mCurrentAnagram.Solution[randomLetterIndex1];
+        char solutionLetter2 = mCurrentAnagram.Solution[randomLetterIndex2];
+
+        RevealLetterTile(solutionLetter1, randomLetterIndex1);
+        RevealLetterTile(solutionLetter2, randomLetterIndex2);
+
+        DisableLifeBubble(revealLifeBubble);
+    }
+
+    // find a letter tile that matches the solution letter and
+    // swap it for the tile at the given index
+    private void RevealLetterTile(char solutionLetter, int index)
+    {
+        GameObject solutionLetterTile = GetLetterTile(solutionLetter);
+        GameObject shuffledLetterTile = anagramGrid.transform.GetChild(index).gameObject;
+        if (!solutionLetterTile.Equals(shuffledLetterTile))
+        {
+            SwapLetterTile(solutionLetterTile, shuffledLetterTile);
+        }
+
+        SetLetterTileComponentsLocked(index);
+    }
+
+    // returns the first letter that matches the given string
+    private GameObject GetLetterTile(char c)
+    {
+        foreach (GameObject letter in mLetters)
+        {
+            if (letter.GetComponentInChildren<Text>().text.Equals(c.ToString()))
+            {
+                return letter;
+            }
+        }
+
+        return null;
+    }
+
+    GameObject reusableLetterTile;
+
+    // used to hold a reference to all of a letters image components
+    Image[] letterComponents;
+
+    // set letter tile as locked in the draggable script
+    // enable lock image on tile
+    private void SetLetterTileComponentsLocked(int index)
+    {
+        reusableLetterTile = anagramGrid.transform.GetChild(index).gameObject;
+
+        reusableLetterTile.GetComponent<LetterBehaviour>().SetLocked();
+
+        // get reference to all letter components
+        letterComponents = reusableLetterTile.GetComponentsInChildren<Image>();
+
+        // find the lock image and enable it
+        foreach (Image image in letterComponents)
+        {
+            if (image.name.Equals("LockImage"))
+            {
+                image.enabled = true;
+            }
+        }
+    }
+
+    // swap two letter tiles
+    private void SwapLetterTile(GameObject letter1, GameObject letter2)
+    {
+        int letter1Index = letter1.transform.GetSiblingIndex();
+
+        // set letter 2 in letter 1's place
+        letter1.transform.SetSiblingIndex(letter2.transform.GetSiblingIndex());
+
+        // set letter 1 in letter 2's place
+        letter2.transform.SetSiblingIndex(letter1Index);
     }
 
     private void DisableLifeBubble(GameObject lifeBubble)
