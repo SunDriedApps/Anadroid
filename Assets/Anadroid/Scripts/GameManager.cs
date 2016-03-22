@@ -20,6 +20,10 @@ public class GameManager : RealTimeMultiplayerListener
     public const string GAME_RESULT_LOSS = "You Lose";
     public const string GAME_RESULT_DRAW = "Draw";
     public const float ANAGRAM_TRANSITION_TIME = 2f;
+    public const int CATEGORY_CODE_FRENCH = 0;
+    public const int CATEGORY_CODE_GEOGRAPHY = 1;
+    public const string CATEGORY_FRENCH = "French";
+    public const string CATEGORY_GEORGRAPHY = "Geography";
 
     // game information
     const int QUICK_GAME_OPPONENTS = 1;
@@ -31,12 +35,8 @@ public class GameManager : RealTimeMultiplayerListener
     public const int MESSAGE_SCORE_UPDATE = 0;
     public const int MESSAGE_ANAGRAM = 2;
     public const int MESSAGE_OPPONENT_READY = 3;
+    public const int MESSAGE_CHOSEN_CATEGORY = 4;
 
-    // categories; used for title on game screen
-    const string CATEGORY_CAPITAL_CITIES = "Capital Cities";
-
-    // category file names
-    const string FILE_CAPITAL_CITIES = "CapitalCities";
 
     // game types
     public const string GAME_TYPE_VS = "VS";
@@ -90,15 +90,13 @@ public class GameManager : RealTimeMultiplayerListener
     // has your opponent clicked ready
     private bool mOpponentReady = false;
 
+    // sound preferences
     private bool mMusicEnabled;
     private bool mSoundEffectsEnabled;
 
 
     public GameManager()
     {
-        // set the chosen category
-        mCategory = CATEGORY_CAPITAL_CITIES;
-
         mGameType = GAME_TYPE_VS;
 
         mMusicEnabled = Convert.ToBoolean(PlayerPrefs.GetInt(MUSIC_ENABLED_KEY, 1));
@@ -108,13 +106,43 @@ public class GameManager : RealTimeMultiplayerListener
     }
 
     // send message to opponent
-    byte[] mMessage = new byte[1];
+    byte[] mMessage = new byte[2];
     public void SendMessage(int messageType)
     {
         mMessage[0] = (byte) messageType;
 
         PlayGamesPlatform.Instance.RealTime.SendMessage(
             true, mOpponentId, mMessage);
+    }
+
+    public void SendMessage(int messageType, int message)
+    {
+        mMessage[0] = (byte)messageType;
+        mMessage[1] = (byte)message;
+
+        PlayGamesPlatform.Instance.RealTime.SendMessage(
+            true, mOpponentId, mMessage);
+    }
+
+    // send anagram to opponent in the form of a byte array
+    byte[] mAnagramBytes;
+    public void SendAnagram(Anagram anagram)
+    {
+        // convert anagram to byte array
+        mAnagramBytes = Anagram.ToByteArray(anagram);
+
+        // the byte array to be sent
+        byte[] message = new byte[mAnagramBytes.Length + 1];
+
+        // insert message type in position 0
+        message[0] = (byte)MESSAGE_ANAGRAM;
+
+        // insert anagram byte array after message type
+        Buffer.BlockCopy(mAnagramBytes, 0, message, 1, mAnagramBytes.Length);
+
+        // send the message to opponent
+        PlayGamesPlatform.Instance.RealTime.SendMessage(
+            true, mOpponentId, message);
     }
 
     // returns the game result in a string
@@ -134,26 +162,6 @@ public class GameManager : RealTimeMultiplayerListener
         }
     }
 
-    // send anagram to opponent in the form of a byte array
-    public void SendAnagram(Anagram anagram)
-    {
-        // convert anagram to byte array
-        byte[] anagramBytes = Anagram.ToByteArray(anagram);
-
-        // the byte array to be sent
-        byte[] message = new byte[anagramBytes.Length + 1];
-
-        // insert message type in position 0
-        message[0] = (byte) MESSAGE_ANAGRAM;
-
-        // insert anagram byte array after message type
-        Buffer.BlockCopy(anagramBytes, 0, message, 1, anagramBytes.Length);
-
-        // send the message to opponent
-        PlayGamesPlatform.Instance.RealTime.SendMessage(
-            true, mOpponentId, message);
-    }
-
     // handle what happens once the players are connected
     public void OnRoomConnected(bool success)
     {
@@ -166,8 +174,7 @@ public class GameManager : RealTimeMultiplayerListener
             mId = GetSelf().ParticipantId;
             mOpponentId = GetOpponentId();
 
-            // first participant in the list is made host
-            if(mParticipants[0].ParticipantId.Equals(mId))
+            if (mParticipants[0].ParticipantId.Equals(mId))
             {
                 mWeAreHost = true;
             }
@@ -175,8 +182,16 @@ public class GameManager : RealTimeMultiplayerListener
             // check if we are host
             if (mWeAreHost)
             {
-                // load category
-                mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
+                CategoriesContainer categoriesContainer = CategoriesContainer.Load();
+
+                // choose random category
+                mCategory = categoriesContainer.GetRandomCategory();
+
+                // load chosen category
+                mCategoryContainer = CategoryContainer.Load(mCategory);
+
+                // send category to opponent
+                SendMessage(MESSAGE_CHOSEN_CATEGORY, GetCategoryCode(mCategory));
 
                 // get the first anagram
                 mCurrentAnagram = mCategoryContainer.GetAnagram();
@@ -186,9 +201,9 @@ public class GameManager : RealTimeMultiplayerListener
 
                 // send anagram object to opponent
                 SendAnagram(mCurrentAnagram);
-            }
 
-            mGameState = GameState.PreGame;
+                mGameState = GameState.PreGame;
+            }
 
             Debug.Log("Room successfully connected.");
         }
@@ -208,10 +223,6 @@ public class GameManager : RealTimeMultiplayerListener
         // get message type from data
         int messageType = data[0];
 
-        // copy anagram bytes from data
-        byte[] anagramInBytes = new byte[data.Length - 1];
-        Buffer.BlockCopy(data, 1, anagramInBytes, 0, anagramInBytes.Length);
-
         switch(messageType)
         {
             case MESSAGE_SCORE_UPDATE:
@@ -220,20 +231,46 @@ public class GameManager : RealTimeMultiplayerListener
                 break;
 
             case MESSAGE_ANAGRAM:
+                byte[] anagramInBytes = new byte[data.Length - 1];
+                Buffer.BlockCopy(data, 1, anagramInBytes, 0, anagramInBytes.Length);
                 mCurrentAnagram = Anagram.FromByteArray(anagramInBytes);
                 break;
 
             case MESSAGE_OPPONENT_READY:
                 mOpponentReady = true;
                 break;
+
+            case MESSAGE_CHOSEN_CATEGORY:
+                mCategory = GetCategoryString(data[1]);
+                mGameState = GameState.PreGame;
+                break;
         }
     }
 
-    // load category into category container
-    // only the host will do this
-    private void LoadCategory(string filename)
+    private int GetCategoryCode(string category)
     {
-        mCategoryContainer = CategoryContainer.Load(FILE_CAPITAL_CITIES);
+        switch(category)
+        {
+            case CATEGORY_FRENCH:
+                return CATEGORY_CODE_FRENCH;
+            case CATEGORY_GEORGRAPHY:
+                return CATEGORY_CODE_GEOGRAPHY;
+        }
+
+        return 0;
+    }
+
+    private string GetCategoryString(int categoryCode)
+    {
+        switch(categoryCode)
+        {
+            case CATEGORY_CODE_FRENCH:
+                return CATEGORY_FRENCH;
+            case CATEGORY_CODE_GEOGRAPHY:
+                return CATEGORY_GEORGRAPHY;
+        }
+
+        return null;
     }
 
     // get the next anagram and send to opponent
@@ -243,6 +280,11 @@ public class GameManager : RealTimeMultiplayerListener
         // if we aren't hosting return and wait 
         // for the next anagram to be sent instead
         if (!mWeAreHost)
+        {
+            return;
+        }
+
+        if(mGameState == GameState.Finished)
         {
             return;
         }
@@ -278,6 +320,7 @@ public class GameManager : RealTimeMultiplayerListener
     public static void CreateWithInvitationScreen()
     {
         sInstance = new GameManager();
+
         PlayGamesPlatform.Instance.RealTime.CreateWithInvitationScreen(MIN_OPPONENTS, MAX_OPPONENTS,
             GAME_VARIENT_VS, sInstance);
     }
@@ -289,11 +332,13 @@ public class GameManager : RealTimeMultiplayerListener
         PlayGamesPlatform.Instance.RealTime.AcceptFromInbox(sInstance);
     }
 
+    
     // accept an invitation to play
-    public static void AcceptInvitation(string invitationId)
+    public static void AcceptInvitation(Invitation invite)
     {
         sInstance = new GameManager();
-        PlayGamesPlatform.Instance.RealTime.AcceptInvitation(invitationId, sInstance);
+
+        PlayGamesPlatform.Instance.RealTime.AcceptInvitation(invite.InvitationId, sInstance);
     }
 
     public void OnLeftRoom()

@@ -18,12 +18,10 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
     const string GAME_OBJECT_PRE_GAME_CATEGORY = "GameCategoryText";
     const string GAME_OBJECT_GAME_TYPE = "GameTypeContentText";
     const string GAME_OBJECT_PRE_GAME_OBJECTIVE = "ObjectiveContentText";
-    const int MAX_NUM_OF_HINTS = 1;
     const float TIME_TO_SOLVE = 100.0f;
 
     public Text hintText;
     public GameObject anagramPanel;
-    public GameObject hintLifeBubble;
     public GameObject shuffleLifeBubble;
     public GameObject revealLifeBubble;
     public Text timerText;
@@ -40,8 +38,6 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
     private static Anagram mCurrentAnagram;
 
     private List<GameObject> mLetters = new List<GameObject>();
-
-    private int mNumOfUsedHints = 0;
 
     private float mTimeRemaining;
 
@@ -147,6 +143,8 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
 
         mCurrentAnagram.Shuffle();
 
+        hintText.text = mCurrentAnagram.Hint;
+
         AddAnagramToGrid();
     }
 
@@ -188,15 +186,6 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
         }
     }
 
-    public void OnHintLifeBubbleClick()
-    {
-        mNumOfUsedHints++;
-
-        hintText.text = mCurrentAnagram.Hint;
-
-        DisableLifeBubble(hintLifeBubble);
-    }
-
     // re-shuffle
     public void OnShuffleLifeBubbleClick()
     {
@@ -212,6 +201,7 @@ public class Test : MonoBehaviour, LetterOnEndDrag {
         Image icon = GameObject.Find(lifeBubble.name + "/Icon").GetComponent<Image>();
         icon.color = new Color(200, 200, 200, 0.4f);
     }
+
     private void EnableLifeBubble(GameObject lifeBubble)
 
     {

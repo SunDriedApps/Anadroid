@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<AnagramCategories>
+
+  <Categories>
+    
+    <Category>
+      <name>French</name>
+    </Category>
+
+    <Category>
+      <name>Geography</name>
+    </Category>
+    
+  </Categories>
+  
+</AnagramCategories>

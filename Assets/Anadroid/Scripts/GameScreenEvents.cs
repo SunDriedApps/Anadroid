@@ -25,8 +25,8 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     const string READY_TEXT = "READY";
     const string WAITING_FOR_OPPONENT_TEXT = "Waiting for opponent";
     const string GAME_OBJECTIVE_VS = "Gain a point for every anagram solved. The player with the most points at the end of the game wins";
-    const int MAX_NUM_OF_HINTS = 3;
-    const int MAX_NUM_OF_REVEALS = 2;
+    const int MAX_NUM_OF_UNLOCKS = 2;
+    const int MAX_NUM_OF_SHUFFLES = 2;
 
     // game objects and components
     public Text category;
@@ -38,9 +38,10 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     public GameObject preGameDialog;
     public GameObject postGameDialog;
     public GameObject homeDialog;
+    public Text shuffleCountText;
+    public Text unlockCountText;
     private HorizontalLayoutGroup anagramGrid;
     public GameObject shuffleLifeBubble;
-    public GameObject hintLifeBubble;
     public GameObject revealLifeBubble;
     public AudioSource lifeBubbleAudio;
     public AudioSource winAudio;
@@ -54,13 +55,12 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     // a reference to all letter objects currently on screen
     private List<GameObject> mLetters;
 
-    // the number of hints used
-    private int mNumOfUsedHints = 0;
-
     // number of reveals used
-    private int mNumOfRevealsUsed = 0;
+    private int mUnlocksLeft = MAX_NUM_OF_UNLOCKS;
 
-    // only 1 re-shuffle allowed per anagram
+    // number of shuffles used
+    private int mShufflesLeft = MAX_NUM_OF_SHUFFLES;
+
     private bool mUsedShuffle = false;
 
     // have we clicked ready
@@ -77,6 +77,10 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     {
         // disable standby on android device
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
+        // set life bubble uses text
+        shuffleCountText.text = MAX_NUM_OF_SHUFFLES.ToString();
+        unlockCountText.text = MAX_NUM_OF_UNLOCKS.ToString();
 
         mMusicEnabled = GameManager.Instance.MusicEnabled;
 
@@ -115,41 +119,13 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
             case GameManager.GameState.Finished:
 
                 // return if post game dialog already showing
-                if(dialogPanel.activeSelf)
+                if(postGameDialog.activeSelf)
                 {
                     return;
                 }
 
-                // show post game dialog
-                dialogPanel.SetActive(true);
+                StartCoroutine(DisplayPostGameDialog());
 
-                postGameDialog.SetActive(true);
-
-                // set game result text component
-                reusableText = GameObject.Find(GAME_OBJECT_GAME_RESULT_TEXT).GetComponent<Text>();
-
-                string gameResult = GameManager.Instance.GetGameResult();
-                reusableText.text = gameResult;
-
-                if(GameManager.Instance.SoundEffectsEnabled)
-                {
-                    switch(gameResult)
-                    {
-                        case GameManager.GAME_RESULT_WIN:
-                            winAudio.Play();
-                            break;
-                        case GameManager.GAME_RESULT_LOSS:
-                            loseAudio.Play();
-                            break;
-                        case GameManager.GAME_RESULT_DRAW:
-                            drawAudio.Play();
-                            break;
-                    }
-                }
-
-                // set final score text
-                reusableText = GameObject.Find(GAME_OBJECT_FINAL_SCORE_TEXT).GetComponent<Text>();
-                reusableText.text = GetFinalScore();
                 return;
 
             case GameManager.GameState.Aborted:
@@ -179,6 +155,8 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
             // attempt to get the first anagram
             mCurrentAnagram = GameManager.Instance.CurrentAnagram;
 
+            hintText.text = mCurrentAnagram.Hint;
+
             // add anagram to grid
             AddAnagramToGrid();
 
@@ -204,24 +182,57 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
             mCurrentAnagram = GameManager.Instance.CurrentAnagram;
 
             // re-enable hint life bubble if we haven't used max amount
-            if (mNumOfUsedHints != MAX_NUM_OF_HINTS)
+            if (mShufflesLeft != 0)
             {
-                EnableLifeBubble(hintLifeBubble);
-            }
-
-            if (mUsedShuffle)
-            {
-                mUsedShuffle = false;
                 EnableLifeBubble(shuffleLifeBubble);
             }
 
-            if(mNumOfRevealsUsed != MAX_NUM_OF_REVEALS)
+            mUsedShuffle = false;
+
+            if(mUnlocksLeft != 0)
             {
                 EnableLifeBubble(revealLifeBubble);
             }
 
             StartCoroutine(AnagramTransition());
         }
+    }
+
+    // co-routine to display post game dialog
+    IEnumerator DisplayPostGameDialog()
+    {
+        postGameDialog.SetActive(true);
+
+        yield return new WaitForSeconds(GameManager.ANAGRAM_TRANSITION_TIME);
+
+        // show post game dialog
+        dialogPanel.SetActive(true);
+
+        // set game result text component
+        reusableText = GameObject.Find(GAME_OBJECT_GAME_RESULT_TEXT).GetComponent<Text>();
+
+        string gameResult = GameManager.Instance.GetGameResult();
+        reusableText.text = gameResult;
+
+        if (GameManager.Instance.SoundEffectsEnabled)
+        {
+            switch (gameResult)
+            {
+                case GameManager.GAME_RESULT_WIN:
+                    winAudio.Play();
+                    break;
+                case GameManager.GAME_RESULT_LOSS:
+                    loseAudio.Play();
+                    break;
+                case GameManager.GAME_RESULT_DRAW:
+                    drawAudio.Play();
+                    break;
+            }
+        }
+
+        // set final score text
+        reusableText = GameObject.Find(GAME_OBJECT_FINAL_SCORE_TEXT).GetComponent<Text>();
+        reusableText.text = GetFinalScore();
     }
 
     // co-routine called between anagrams
@@ -237,6 +248,9 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
         ResetPanel(anagramPanel);
 
         AddAnagramToGrid();
+
+        // set the new hint
+        hintText.text = mCurrentAnagram.Hint;
 
         TimerController.EnableTimer();
     }
@@ -326,6 +340,11 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
             return;
         }
 
+        if(GameManager.Instance.State == GameManager.GameState.Finished)
+        {
+            return;
+        }
+
         // iterate through each character and make a letter prefab
         for (int i = 0; i < mCurrentAnagram.Length; i++)
         {
@@ -390,6 +409,10 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
     {
         mUsedShuffle = true;
 
+        mShufflesLeft--;
+
+        shuffleCountText.text = mShufflesLeft.ToString();
+
         mCurrentAnagram.Shuffle();
 
         ResetPanel(anagramPanel);
@@ -399,20 +422,12 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
         DisableLifeBubble(shuffleLifeBubble);
     }
 
-    // show a hint for the current anagram
-    public void OnHintLifeBubbleClick()
+    // unlock 2 letters from the solution
+    public void OnUnlockLifeBubbleClick()
     {
-        mNumOfUsedHints++;
+        mUnlocksLeft--;
 
-        hintText.text = mCurrentAnagram.Hint;
-
-        DisableLifeBubble(hintLifeBubble);
-    }
-
-    // reveal 2 letters from the solution
-    public void OnRevealLifeBubbleClick()
-    {
-        mNumOfRevealsUsed++;
+        unlockCountText.text = mUnlocksLeft.ToString();
 
         // get random index for first letter
         int randomLetterIndex1;
@@ -429,15 +444,15 @@ public class GameScreenEvents : MonoBehaviour, LetterOnEndDrag {
         char solutionLetter1 = mCurrentAnagram.Solution[randomLetterIndex1];
         char solutionLetter2 = mCurrentAnagram.Solution[randomLetterIndex2];
 
-        RevealLetterTile(solutionLetter1, randomLetterIndex1);
-        RevealLetterTile(solutionLetter2, randomLetterIndex2);
+        UnlockLetterTile(solutionLetter1, randomLetterIndex1);
+        UnlockLetterTile(solutionLetter2, randomLetterIndex2);
 
         DisableLifeBubble(revealLifeBubble);
     }
 
     // find a letter tile that matches the solution letter and
     // swap it for the tile at the given index
-    private void RevealLetterTile(char solutionLetter, int index)
+    private void UnlockLetterTile(char solutionLetter, int index)
     {
         GameObject solutionLetterTile = GetLetterTile(solutionLetter);
         GameObject shuffledLetterTile = anagramGrid.transform.GetChild(index).gameObject;

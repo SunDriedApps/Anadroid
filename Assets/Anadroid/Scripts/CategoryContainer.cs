@@ -8,7 +8,7 @@ using System.IO;
 ** A class which will help load each category and store the associated anagrams.
 */ 
 
-[XmlRoot("AnagramCategories")]
+[XmlRoot("AnagramCategory")]
 public class CategoryContainer
 {
     [XmlArray("Anagrams")]

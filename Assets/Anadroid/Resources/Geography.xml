@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AnagramCategory>
+  
+  <Anagrams>
+    
+    <Anagram>
+      <solution>ATMOSPHERE</solution>
+      <hint>Material around Earth</hint>
+    </Anagram>
+    <Anagram>
+      <solution>BIOSPHERE</solution>
+      <hint>Zone of living things</hint>
+    </Anagram>
+    <Anagram>
+      <solution>BEACH</solution>
+      <hint>Along shoreline</hint>
+    </Anagram>
+    <Anagram>
+      <solution>CAPE</solution>
+      <hint>Large Headland</hint>
+    </Anagram>
+    <Anagram>
+      <solution>CARTOGRAPHY</solution>
+      <hint>Map maker</hint>
+    </Anagram>
+    <Anagram>
+      <solution>CRATER</solution>
+      <hint>Large circular depression</hint>
+    </Anagram>
+    <Anagram>
+      <solution>CRUST</solution>
+      <hint>Earth's outermost layer</hint>
+    </Anagram>
+    <Anagram>
+      <solution>EQUATOR</solution>
+      <hint>Circle around earth between poles</hint>
+    </Anagram>
+    <Anagram>
+      <solution>FJORD</solution>
+      <hint>GLACIAL INLET</hint>
+    </Anagram>
+    <Anagram>
+      <solution>FAULT</solution>
+      <hint>FRACTURE IN EARTH'S CRUST</hint>
+    </Anagram>
+    <Anagram>
+      <solution>GLACIER</solution>
+      <hint>MASS OF ICE</hint>
+    </Anagram>
+    <Anagram>
+      <solution>IGNEOUS</solution>
+      <hint>ROCK FROM HARDENED MOLTEN LAVA</hint>
+    </Anagram>
+    <Anagram>
+      <solution>LAVA</solution>
+      <hint>MAGMA ABOVE EARTH'S SURFACE</hint>
+    </Anagram>
+    <Anagram>
+      <solution>LONGITUDE</solution>
+      <hint>MEASURE OF DISTANCE EAST AND WEST</hint>
+    </Anagram>
+    <Anagram>
+      <solution>OCEAN</solution>
+      <hint>SALT WATER SURROUNDING CONTINENTS</hint>
+    </Anagram>
+    <Anagram>
+      <solution>SEISMOGRAPH</solution>
+      <hint>MEASURES EARTHQUAKE VIBRATIONS</hint>
+    </Anagram>
+    <Anagram>
+      <solution>VALLEY</solution>
+      <hint>AREA BETWEEN MOUNTAINS</hint>
+    </Anagram>
+  </Anagrams>
+</AnagramCategory>

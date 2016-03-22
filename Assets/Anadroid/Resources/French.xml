@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AnagramCategory>
+  
+  <Anagrams>
+    
+    <Anagram>
+      <solution>MONSIEUR</solution>
+      <hint>gentleman</hint>
+    </Anagram>
+    <Anagram>
+      <solution>BONJOUR</solution>
+      <hint>hello</hint>
+    </Anagram>
+    <Anagram>
+      <solution>MAISON</solution>
+      <hint>house</hint>
+    </Anagram>
+    <Anagram>
+      <solution>OUAIS</solution>
+      <hint>yeah</hint>
+    </Anagram>
+    <Anagram>
+      <solution>MANGER</solution>
+      <hint>to eat</hint>
+    </Anagram>
+    <Anagram>
+      <solution>AMOUR</solution>
+      <hint>love</hint>
+    </Anagram>
+    <Anagram>
+      <solution>DEMAIN</solution>
+      <hint>tomorrow</hint>
+    </Anagram>
+    <Anagram>
+      <solution>VOITURE</solution>
+      <hint>car</hint>
+    </Anagram>
+    <Anagram>
+      <solution>DORMIR</solution>
+      <hint>to sleep</hint>
+    </Anagram>
+    <Anagram>
+      <solution>FAMILLE</solution>
+      <hint>family</hint>
+    </Anagram>
+    <Anagram>
+      <solution>APPRENDRE</solution>
+      <hint>to learn</hint>
+    </Anagram>
+    <Anagram>
+      <solution>PORTE</solution>
+      <hint>door</hint>
+    </Anagram>
+    <Anagram>
+      <solution>CONTRE</solution>
+      <hint>against</hint>
+    </Anagram>
+    <Anagram>
+      <solution>EAU</solution>
+      <hint>water</hint>
+    </Anagram>
+    <Anagram>
+      <solution>SOUVENIR</solution>
+      <hint>memory</hint>
+    </Anagram>
+    <Anagram>
+      <solution>CHAMBRE</solution>
+      <hint>bedroom</hint>
+    </Anagram>
+    <Anagram>
+      <solution>ENDROIT</solution>
+      <hint>place</hint>
+    </Anagram>
+  </Anagrams>
+</AnagramCategory>

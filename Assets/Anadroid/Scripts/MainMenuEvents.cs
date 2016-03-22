@@ -22,6 +22,7 @@ public class MainMenuEvents : MonoBehaviour
     public GameObject signInFailedDialog;
     public GameObject searchingDialog;
     public GameObject invitationDialog;
+    public GameObject categoryDialog;
     public GameObject musicSideMenuButton;
     public GameObject soundEffectsSideMenuButton;
     public Text invatationDialogPlayerName;
@@ -182,7 +183,7 @@ public class MainMenuEvents : MonoBehaviour
             if (InvitationManager.Instance.ShouldAutoAccept)
             {
                 InvitationManager.Instance.Clear();
-                GameManager.AcceptInvitation(invite.InvitationId);
+                GameManager.AcceptInvitation(invite);
             }
             else
             {
@@ -216,7 +217,9 @@ public class MainMenuEvents : MonoBehaviour
         }
         mProcessed = true;
 
-        GameManager.CreateWithInvitationScreen();
+        dialogPanel.SetActive(true);
+
+        categoryDialog.SetActive(true);
     }
 
     public void OnInbox()
@@ -283,7 +286,7 @@ public class MainMenuEvents : MonoBehaviour
         }
 
         InvitationManager.Instance.Clear();
-        GameManager.AcceptInvitation(invite.InvitationId);
+        GameManager.AcceptInvitation(invite);
         invitationDialog.SetActive(false);
         dialogPanel.SetActive(false);
         Debug.Log("Invitation accepted");
@@ -319,5 +322,10 @@ public class MainMenuEvents : MonoBehaviour
         menuButtonAudioSource.enabled = mSoundEffectsEnabled;
 
         GameObject.Find(SOUND_EFFECTS_DISABLED_IMAGE).GetComponent<Image>().enabled = !mSoundEffectsEnabled;
+    }
+
+    public void OnCategoryButtonClick(Text categoryText)
+    {
+        //GameManager.CreateWithInvitationScreen(categoryText.ToString());
     }
 }

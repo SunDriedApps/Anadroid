@@ -35,6 +35,11 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
    
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if(mLocked)
+        {
+            return;
+        }
+
         letterGap = new GameObject();
         letterGap.name = "LetterGap";
         letterGap.transform.SetParent(transform.parent);
@@ -58,6 +63,11 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     int newLetterGapIndex;
     public void OnDrag(PointerEventData eventData)
     {
+        if(mLocked)
+        {
+            return;
+        }
+
         transform.position = eventData.position;
 
         newLetterGapIndex = letterGap.transform.GetSiblingIndex();
@@ -131,6 +141,11 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if(mLocked)
+        {
+            return;
+        }
+
         Debug.Log("End drag called");
 
         transform.SetParent(anagramPanelTransform);
@@ -139,7 +154,7 @@ public class LetterBehaviour : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if(transform.GetSiblingIndex() != letterGap.transform.GetSiblingIndex())
         {
             transform.SetSiblingIndex(letterGap.transform.GetSiblingIndex());
-
+            
             if (GameManager.Instance.SoundEffectsEnabled)
             {
                 GameObject.Find(GAME_OBJECT_LETTER_POP).GetComponent<AudioSource>().Play();
